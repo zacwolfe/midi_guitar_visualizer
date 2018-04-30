@@ -1,0 +1,10 @@
+mido >= 1.2.8
+python-rtmidi >= 1.1.0
+attrdict==2.0.0
+svgwrite==1.1.9
+PyYAML==3.12
+Cython==0.26.1
+kivy >= 1.10.0
+venvdotapp >= 0.1.0
+pygame >= 1.9.3
+
