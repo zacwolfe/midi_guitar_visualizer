@@ -9,6 +9,7 @@ from kivy.uix.widget import Widget
 
 from kivy.graphics import Color, Ellipse, Line, Rectangle
 from fretboard.fretboard import Fretboard
+from fretboard.app_window import AppWindow
 
 # root = Builder.load_string('''
 # FloatLayout:
@@ -37,17 +38,18 @@ class FretboardNavigator(App):
 
     def build(self):
         # return Label(text='Hello World')
-        fretb = Fretboard()
+        app_window = AppWindow()
+        # fretb = Fretboard()
         def my_callback():
-            fretb.add_some_stuff()
+            app_window.fretboard.add_some_stuff()
             Clock.schedule_once(lambda dt:my_callback2(), 3 )
 
         def my_callback2():
-            fretb.remove_some_stuff()
+            app_window.fretboard.remove_some_stuff()
 
         Clock.schedule_once(lambda dt: my_callback(), 3)
         # Clock.schedule_once(lambda dt:my_callback2, 6)
-        return fretb
+        return app_window
         # return MyPaintWidget()
 
 if __name__ == '__main__':

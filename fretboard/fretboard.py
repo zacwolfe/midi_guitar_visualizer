@@ -63,11 +63,11 @@ class Fretboard(RelativeLayout):
 
         with self.canvas:
             print("WITH SHITTING...")
-            Window.size = (self.initial_width, self.initial_width * self.height_ratio + self.margin_size * 2)
-            Window.left = self.initial_screen_loc_x
-            Window.top = self.initial_screen_loc_y
-            # Color(1, 1, 1, 1, mode='rgba')
+            # Window.size = (self.initial_width, self.initial_width * self.height_ratio + self.margin_size * 2)
+            # Window.left = self.initial_screen_loc_x
+            # Window.top = self.initial_screen_loc_y
             Window.clearcolor = (1, 1, 1, 1)
+            Color(1,1,1,1, group='fb')
             self.rect = Rectangle(pos=self.pos, size=self.size, group='fb')
             # self.button = Button(text='Hello world', size_hint=(.6, .6),
             #                 pos_hint={'x': .2, 'y': .2})
