@@ -321,7 +321,7 @@ class Fretboard(RelativeLayout):
 
         relative_taper_amt = ((neck_len - (nut_width + dist_from_nut)) / neck_len) * taper_amt
         board_height_pct = (hite - relative_taper_amt*2)/hite
-        return [relative_taper_amt + board_height_pct*(inset_hight + (x*string_spacing)) for x in range(0, self.tuning.get_num_strings())]
+        return [relative_taper_amt + board_height_pct*(inset_hight + (x*string_spacing)) for x in reversed(range(0, self.tuning.get_num_strings()))]
 
 
     def get_fret_x(self, fret_num):

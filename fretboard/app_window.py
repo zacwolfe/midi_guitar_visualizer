@@ -12,6 +12,8 @@ class AppWindow(RelativeLayout):
     initial_screen_loc_x = 50
     initial_screen_loc_y = 400
 
+    # default_port = 'Fishman TriplePlay TP Control'
+    default_port = 'Fishman TriplePlay TP Guitar'
     def __init__(self, **kwargs):
         super(AppWindow, self).__init__(**kwargs)
 
@@ -40,14 +42,19 @@ class AppWindow(RelativeLayout):
         self.rect.size = self.size
 
     def start_listening_midi(self):
-        self.input_port = mido.open_input(callback=self.midi_message_received)
+        self.input_port = mido.open_input(name=self.default_port, callback=self.midi_message_received)
+        if self.input_port.closed:
+            self.input_port = mido.open_input(callback=self.midi_message_received)
+        print("we got port {}".format(self.input_port))
 
 
     def midi_message_received(self, message):
-        print('midi!!! {}'.format(message))
+        # print('midi!!! {}'.format(message))
         if message.type == 'note_on':
+            print('note_on {}'.format(message))
             self.fretboard.midi_note_on(message.note, message.channel)
         elif message.type == 'note_off':
+            print('note_off {}'.format(message))
             self.fretboard.midi_note_off(message.note, message.channel)
 
 

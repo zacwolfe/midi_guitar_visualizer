@@ -13,7 +13,7 @@ class Tuning(object):
 
     def __init__(self):
         self.num_strings = 6
-        self.tuning = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4']
+        self.tuning = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2']
 
     def get_num_strings(self):
         return self.num_strings
@@ -27,6 +27,7 @@ class Tuning(object):
     # assumes midi channel == string number
     def get_string_and_fret(self, midi_note, channel):
         note = self.get_string_midi_note(channel)
+        print('midinote {} on chan {} converts to open string {} or {}'.format(midi_note, channel, note, from_midi(note)))
         return (channel, midi_note - note)
 
 class StandardTuning(Tuning):
@@ -35,7 +36,7 @@ class StandardTuning(Tuning):
 class P4Tuning(Tuning):
     def __init__(self):
         super().__init__()
-        self.tuning = ['E2', 'A2', 'D3', 'G3', 'C3', 'F4']
+        self.tuning = ['F4', 'C4', 'G3', 'D3', 'A2', 'E2']
 
 def from_midi(midi):
   name = CHROMATIC[midi % 12]
@@ -49,7 +50,7 @@ def to_midi (sci_pitch):
     return SEMITONES[p[0]] + p[1] + 12 * (p[2] + 1)
 
 def parse_pitch(str):
-    m = p.match(str) #REGEX.exec(str)
+    m = p.match(str)
     if not m:
       return None
 
