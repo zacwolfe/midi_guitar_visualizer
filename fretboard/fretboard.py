@@ -36,8 +36,6 @@ class Fretboard(RelativeLayout):
     string_inset_ratio = .07
     string_width = 3
     string_slot_width = 3
-    num_strings = 6
-    string_tuning = ['E2', 'A2', 'D3', 'G3', 'C3', 'F4']
     fret_dot_locations = [3,5,7,9,12,15,17,19,21]
     fret_color = (0.3, 0.3, 0.3, 0.5)
 
@@ -56,9 +54,10 @@ class Fretboard(RelativeLayout):
     # Config.set('graphics', 'left', 100)
     # Config.set('graphics', 'top', 10)
 
-    def __init__(self, **kwargs):
+    def __init__(self, tuning, **kwargs):
         super(Fretboard, self).__init__(**kwargs)
 
+        self.tuning = tuning
         self.notes = {}
 
         with self.canvas:
@@ -168,7 +167,7 @@ class Fretboard(RelativeLayout):
         start_offsets = self.get_string_locations(0)
         end_offsets = self.get_string_locations(self.fretboard_length())
         Color(0, 0, 0, group='fb')
-        for string_num in range(0, self.num_strings):
+        for string_num in range(0, self.tuning.get_num_strings()):
             Line(points=(start_x, self.margin_size + start_offsets[string_num],
                          end_x, self.margin_size + end_offsets[string_num]), width=self.string_width, cap='round', group='fb')
 
@@ -214,9 +213,9 @@ class Fretboard(RelativeLayout):
             last_x = fret_x
 
 
-    def get_finger_location(self, fret_num, string_num):
-        if fret_num == 0:
-            return 0
+    def get_finger_location(self, string_num, fret_num):
+        # if fret_num == 0:
+        #     return 0
 
         fret_x = self.get_fret_x(fret_num)
         prev_fret_x = self.get_fret_x(fret_num - 1)
@@ -231,6 +230,11 @@ class Fretboard(RelativeLayout):
         # pos_x = fret_x
         return (pos_x, pos_y)
 
+    def midi_note_on(self, midi_note, channel):
+        self.note_on(*self.tuning.get_string_and_fret(midi_note, channel))
+
+    def midi_note_off(self, midi_note, channel):
+        self.note_off(*self.tuning.get_string_and_fret(midi_note, channel))
 
     def note_on(self, string_num, fret_num):
         note_id = _generate_note_id(string_num, fret_num)
@@ -239,7 +243,7 @@ class Fretboard(RelativeLayout):
             print('note {} is already hear!!!!'.format(note_id))
             return
 
-        loc = self.get_finger_location(fret_num, string_num)
+        loc = self.get_finger_location(string_num, fret_num)
         print('Note on at {},{}'.format(int(loc[0]), int(loc[1])))
 
         # neck_len = self.neck_length()
@@ -255,6 +259,7 @@ class Fretboard(RelativeLayout):
         # note = Note(string_num, fret_num, pos_hint=pos_hint, size=(self.finger_width_ratio*neck_len, self.finger_height_ratio*neck_len))
         self.notes[note_id] = note
         self.add_widget(note)
+
         # note.x = loc[0]
         # note.y = loc[1]
         # note.width = self.finger_width
@@ -308,7 +313,7 @@ class Fretboard(RelativeLayout):
 
         inset_hight = hite * self.string_inset_ratio
         string_span = hite - inset_hight * 2
-        string_spacing = string_span/(self.num_strings - 1)
+        string_spacing = string_span/(self.tuning.get_num_strings() - 1)
 
         taper_amt = hite * self.neck_taper * 0.5
         neck_len = self.neck_length()
@@ -316,7 +321,7 @@ class Fretboard(RelativeLayout):
 
         relative_taper_amt = ((neck_len - (nut_width + dist_from_nut)) / neck_len) * taper_amt
         board_height_pct = (hite - relative_taper_amt*2)/hite
-        return [relative_taper_amt + board_height_pct*(inset_hight + (x*string_spacing)) for x in range(0, self.num_strings)]
+        return [relative_taper_amt + board_height_pct*(inset_hight + (x*string_spacing)) for x in range(0, self.tuning.get_num_strings())]
 
 
     def get_fret_x(self, fret_num):
@@ -350,7 +355,7 @@ class Fretboard(RelativeLayout):
 
 
     def get_normalized_fret_dist_to_nut(self, fret_num):
-        if fret_num == 0:
+        if fret_num <= 0:
             return 0.0
 
         s = 1.0
@@ -397,19 +402,37 @@ class Note(Widget):
         with self.canvas:
             self.canvas.clear()
             Color(*self.finger_color)
-            print("this note {} trying to draw with pos_hint {} and size {} and abs pos {} and size {}".format(
-                self.id, self.pos_hint, self.size_hint, self.pos, self.size
-            ))
-            # Ellipse(pos=self.pos, size=(self.size[0], self.size[0]))
+            # print("this note {} trying to draw with pos_hint {} and size {} and abs pos {} and size {}".format(
+            #     self.id, self.pos_hint, self.size_hint, self.pos, self.size
+            # ))
             Ellipse(pos=self.pos, size=self.size)
-            # Ellipse(pos_hint=self.pos_hint, size_hint=self.size_hint)
-            # Ellipse(size_hint=(1,1))
-            # Ellipse(pos=self.pos, size=self.size)
-            # print('my id is {}'.format(self.id))
 
+class StringActivity(Widget):
+
+    finger_color = (0.1, 0.1, 1.0, 0.8)
+
+    def __init__(self, string_num, **kwargs):
+        super(StringActivity, self).__init__(**kwargs)
+        self.string_num = string_num
+        self.id = _generate_string_id(string_num)
+        self.do_draw()
+        # self.bind(size=self.do_draw)
+        self.bind(pos=self.do_draw)
+
+    def do_draw(self, *args):
+        with self.canvas:
+            self.canvas.clear()
+            Color(*self.finger_color)
+            # print("this note {} trying to draw with pos_hint {} and size {} and abs pos {} and size {}".format(
+            #     self.id, self.pos_hint, self.size_hint, self.pos, self.size
+            # ))
+            Ellipse(pos=self.pos, size=self.size)
 
 def _generate_note_id(string_num, fret_num):
     return 'Note-{}.{}'.format(string_num, fret_num)
+
+def _generate_string_id(string_num):
+    return 'String-{}'.format(string_num)
 
 def _dist_from_nut(scale, fret_num):
     return scale - (scale / (2 ** (float(fret_num) / 12.0)))
