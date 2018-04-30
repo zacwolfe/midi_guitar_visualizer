@@ -240,11 +240,11 @@ class Fretboard(RelativeLayout):
         note_id = _generate_note_id(string_num, fret_num)
 
         if note_id in self.notes:
-            print('note {} is already hear!!!!'.format(note_id))
+            # print('note {} is already hear!!!!'.format(note_id))
             return
 
         loc = self.get_finger_location(string_num, fret_num)
-        print('Note on at {},{}'.format(int(loc[0]), int(loc[1])))
+        # print('Note on at {},{}'.format(int(loc[0]), int(loc[1])))
 
         # neck_len = self.neck_length()
 
@@ -252,7 +252,7 @@ class Fretboard(RelativeLayout):
 
         # pos_hint = {'x': loc[0]/self.width, 'y': loc[1]/self.height}
         pos_hint = {'center_x': loc[0]/self.width, 'center_y': loc[1]/self.height}
-        print('pos_hint is {}'.format(pos_hint))
+        # print('pos_hint is {}'.format(pos_hint))
 
         # note = Note(string_num, fret_num, pos=(loc[0], loc[1]), size_hint=(self.finger_width_ratio, self.finger_height_ratio))
         note = Note(string_num, fret_num, pos_hint=pos_hint, size_hint=(self.finger_width_ratio, (self.finger_width_ratio*self.width/self.height)))
