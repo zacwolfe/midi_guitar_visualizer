@@ -70,19 +70,7 @@ class Fretboard(RelativeLayout):
             Window.clearcolor = (1, 1, 1, 1)
             Color(1,1,1,1, group='fb')
             self.rect = Rectangle(pos=self.pos, size=self.size, group='fb')
-            # self.button = Button(text='Hello world', size_hint=(.6, .6),
-            #                 pos_hint={'x': .2, 'y': .2})
-            # self.add_widget(self.button)
 
-            # note = Note(5, 2, pos_hint={'x':.5, 'y':.5},
-            #             size_hint=(self.finger_width_ratio, self.finger_height_ratio))
-
-            # note = Note(5, 2, pos_hint={'x':.2, 'top':.4},
-            #             size_hint=(self.finger_width_ratio, self.finger_height_ratio))
-            # self.add_widget(note)
-            # self.redraw_fretboard()
-            #
-            # Rectangle(pos=self.pos, size=self.size)
             pass
 
         with self.canvas.before:
@@ -252,31 +240,15 @@ class Fretboard(RelativeLayout):
             # return
 
         loc = self.get_finger_location(string_num, fret_num)
-        # print('Note on at {},{}'.format(int(loc[0]), int(loc[1])))
 
-        # neck_len = self.neck_length()
-
-        # note = Note(string_num, fret_num, pos=(loc[0], loc[1]), size=(self.finger_width_ratio*neck_len, self.finger_height_ratio*neck_len))
-
-        # pos_hint = {'x': loc[0]/self.width, 'y': loc[1]/self.height}
         pos_hint = {'center_x': loc[0]/self.width, 'center_y': loc[1]/self.height}
+        size_hint = (self.finger_width_ratio, (self.finger_width_ratio * self.width / self.height))
         # print('pos_hint is {}'.format(pos_hint))
 
-        # note = Note(string_num, fret_num, pos=(loc[0], loc[1]), size_hint=(self.finger_width_ratio, self.finger_height_ratio))
-        note = Note(string_num, fret_num, pos_hint=pos_hint, size_hint=(self.finger_width_ratio, (self.finger_width_ratio*self.width/self.height)))
-        # note = Note(string_num, fret_num, pos_hint=pos_hint, size=(self.finger_width_ratio*neck_len, self.finger_height_ratio*neck_len))
+        note = Note(self, string_num, fret_num, pos_hint=pos_hint, size_hint=size_hint)
         self.notes[note_id] = note
         self.add_widget(note)
 
-        # note.x = loc[0]
-        # note.y = loc[1]
-        # note.width = self.finger_width
-        # note.height = self.finger_height
-
-
-
-        # Color(*self.finger_color)
-        # Ellipse(pos=(loc[0], loc[1]), size=(self.finger_width, self.finger_height))
 
     def note_off(self, string_num, fret_num):
         note_id = _generate_note_id(string_num, fret_num)
@@ -291,6 +263,13 @@ class Fretboard(RelativeLayout):
         # note = self.notes.pop(note_id, None)
         # if note:
         #     self.remove_widget(note)
+
+    def update_note(self, note):
+        loc = self.get_finger_location(note.string_num, note.fret_num)
+        pos_hint = {'center_x': loc[0] / self.width, 'center_y': loc[1] / self.height}
+        size_hint = (self.finger_width_ratio, (self.finger_width_ratio * self.width / self.height))
+        note.pos_hint = pos_hint
+        note.size_hint = size_hint
 
     def draw_notes(self):
         pass
@@ -407,8 +386,9 @@ class Note(Widget):
     start_color = [0.8, 0.0, 0.0, 0.8]
     fade_duration = 1
 
-    def __init__(self, string_num, fret_num, **kwargs):
+    def __init__(self, fretboard, string_num, fret_num, **kwargs):
         super(Note, self).__init__(**kwargs)
+        self.fretboard = fretboard
         self.string_num = string_num
         self.fret_num = fret_num
         self.id = _generate_note_id(string_num, fret_num)
@@ -420,7 +400,9 @@ class Note(Widget):
         self.bind(size=self.do_update)
 
     def do_update(self, *args):
+        self.fretboard.update_note(self)
         self.ellipse.pos = self.pos
+
         self.ellipse.size = self.size
 
     def hide(self):
