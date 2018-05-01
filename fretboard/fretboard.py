@@ -6,6 +6,8 @@ from kivy.uix.stacklayout import StackLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.config import Config
+from kivy.properties import BooleanProperty, ListProperty
+from kivy.animation import Animation, AnimationTransition
 
 class Fretboard(RelativeLayout):
 
@@ -239,9 +241,15 @@ class Fretboard(RelativeLayout):
     def note_on(self, string_num, fret_num):
         note_id = _generate_note_id(string_num, fret_num)
 
-        if note_id in self.notes:
-            # print('note {} is already hear!!!!'.format(note_id))
+        note = self.notes.get(note_id)
+        if note:
+            note.show()
+            # note.hidden = False
             return
+
+        # if note_id in self.notes:
+            # print('note {} is already hear!!!!'.format(note_id))
+            # return
 
         loc = self.get_finger_location(string_num, fret_num)
         # print('Note on at {},{}'.format(int(loc[0]), int(loc[1])))
@@ -272,9 +280,17 @@ class Fretboard(RelativeLayout):
 
     def note_off(self, string_num, fret_num):
         note_id = _generate_note_id(string_num, fret_num)
-        note = self.notes.pop(note_id, None)
+        note = self.notes.get(note_id)
         if note:
-            self.remove_widget(note)
+            note.hide()
+            # Animation.cancel_all(note.color, 'a')
+            # Animation(a=0, duration=1, on_complete=self.hide_note)
+            # note.hidden = True
+            # return
+
+        # note = self.notes.pop(note_id, None)
+        # if note:
+        #     self.remove_widget(note)
 
     def draw_notes(self):
         pass
@@ -387,29 +403,46 @@ class Fretboard(RelativeLayout):
 
 class Note(Widget):
 
-    finger_color = (0.1, 0.1, 1.0, 0.8)
+    end_color = [0.1, 0.1, 1.0, 0.0]
+    start_color = [0.8, 0.0, 0.0, 0.8]
+    fade_duration = 1
 
     def __init__(self, string_num, fret_num, **kwargs):
         super(Note, self).__init__(**kwargs)
         self.string_num = string_num
         self.fret_num = fret_num
         self.id = _generate_note_id(string_num, fret_num)
-        self.do_draw()
-        # self.bind(size=self.do_draw)
-        self.bind(pos=self.do_draw)
-
-    def do_draw(self, *args):
         with self.canvas:
-            self.canvas.clear()
-            Color(*self.finger_color)
-            # print("this note {} trying to draw with pos_hint {} and size {} and abs pos {} and size {}".format(
-            #     self.id, self.pos_hint, self.size_hint, self.pos, self.size
-            # ))
-            Ellipse(pos=self.pos, size=self.size)
+            self.color = Color(*self.start_color)
+            self.ellipse = Ellipse(pos=self.pos, size=self.size)
+
+        self.bind(pos=self.do_update)
+        self.bind(size=self.do_update)
+
+    def do_update(self, *args):
+        self.ellipse.pos = self.pos
+        self.ellipse.size = self.size
+
+    def hide(self):
+        Animation.cancel_all(self.color, 'r,g,b,a')
+        anim = Animation(r=self.end_color[0],
+                         g=self.end_color[1],
+                         b=self.end_color[2],
+                         a=self.end_color[3],
+                         duration=self.fade_duration)
+        anim.start(self.color)
+
+    def show(self):
+        Animation.cancel_all(self.color, 'r,g,b,a')
+        self.color.r = self.start_color[0]
+        self.color.g = self.start_color[1]
+        self.color.b = self.start_color[2]
+        self.color.a = self.start_color[3]
 
 class StringActivity(Widget):
 
     finger_color = (0.1, 0.1, 1.0, 0.8)
+    hidden = BooleanProperty(False)
 
     def __init__(self, string_num, **kwargs):
         super(StringActivity, self).__init__(**kwargs)
@@ -422,11 +455,12 @@ class StringActivity(Widget):
     def do_draw(self, *args):
         with self.canvas:
             self.canvas.clear()
-            Color(*self.finger_color)
-            # print("this note {} trying to draw with pos_hint {} and size {} and abs pos {} and size {}".format(
-            #     self.id, self.pos_hint, self.size_hint, self.pos, self.size
-            # ))
-            Ellipse(pos=self.pos, size=self.size)
+            if not self.hidden:
+                Color(*self.finger_color)
+                Ellipse(pos=self.pos, size=self.size)
+
+    def on_hidden(self, instance, value):
+        self.do_draw()
 
 def _generate_note_id(string_num, fret_num):
     return 'Note-{}.{}'.format(string_num, fret_num)

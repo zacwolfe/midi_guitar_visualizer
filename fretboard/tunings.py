@@ -27,7 +27,7 @@ class Tuning(object):
     # assumes midi channel == string number
     def get_string_and_fret(self, midi_note, channel):
         note = self.get_string_midi_note(channel)
-        print('midinote {} on chan {} converts to open string {} or {}'.format(midi_note, channel, note, from_midi(note)))
+        # print('midinote {} on chan {} converts to open string {} or {}'.format(midi_note, channel, note, from_midi(note)))
         return (channel, midi_note - note)
 
 class StandardTuning(Tuning):

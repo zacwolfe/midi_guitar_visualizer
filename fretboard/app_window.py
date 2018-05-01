@@ -3,7 +3,7 @@ from kivy.core.window import Window
 from kivy.uix.relativelayout import RelativeLayout
 from .fretboard import Fretboard
 from .tunings import P4Tuning
-import mido
+
 
 class AppWindow(RelativeLayout):
 
@@ -12,10 +12,9 @@ class AppWindow(RelativeLayout):
     initial_screen_loc_x = 50
     initial_screen_loc_y = 400
 
-    # default_port = 'Fishman TriplePlay TP Control'
-    default_port = 'Fishman TriplePlay TP Guitar'
-    def __init__(self, **kwargs):
+    def __init__(self, midi_config, **kwargs):
         super(AppWindow, self).__init__(**kwargs)
+        self.midi_config = midi_config
 
         with self.canvas:
             Window.size = (self.initial_width, self.initial_width * self.height_ratio)
@@ -35,26 +34,20 @@ class AppWindow(RelativeLayout):
             pass
 
         self.bind(size=self.size_changed)
-        self.start_listening_midi()
+        self.midi_config.open_input(self.midi_message_received)
 
     def size_changed(self, *args):
         self.rect.pos = self.pos
         self.rect.size = self.size
 
     def start_listening_midi(self):
-        self.input_port = mido.open_input(name=self.default_port, callback=self.midi_message_received)
-        if self.input_port.closed:
-            self.input_port = mido.open_input(callback=self.midi_message_received)
-        print("we got port {}".format(self.input_port))
+        self.midi_config.open_input()
 
-
-    def midi_message_received(self, message):
+    def midi_message_received(self, midi_note, channel, on):
         # print('midi!!! {}'.format(message))
-        if message.type == 'note_on':
-            print('note_on {}'.format(message))
-            self.fretboard.midi_note_on(message.note, message.channel)
-        elif message.type == 'note_off':
-            print('note_off {}'.format(message))
-            self.fretboard.midi_note_off(message.note, message.channel)
+        if on:
+            self.fretboard.midi_note_on(midi_note, channel)
+        else:
+            self.fretboard.midi_note_off(midi_note, channel)
 
 
