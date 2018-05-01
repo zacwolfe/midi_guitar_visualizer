@@ -358,20 +358,21 @@ class Fretboard(RelativeLayout):
 
 
     def add_some_stuff(self):
+        pass
         # self.note_on(0, 1)
         # self.note_on(1, 11)
         # self.note_on(2, 12)
-        self.note_on(5, 5)
-        self.note_on(5, 1)
-        self.note_on(4, 22)
-
-        self.draw_string_activation(2)
+        # self.note_on(5, 5)
+        # self.note_on(5, 1)
+        # self.note_on(4, 22)
+        #
+        # self.draw_string_activation(2)
 
     def remove_some_stuff(self):
-        self.note_off(0,1)
-        self.note_off(1, 11)
-        self.note_off(2, 12)
         pass
+        # self.note_off(0,1)
+        # self.note_off(1, 11)
+        # self.note_off(2, 12)
         # self.draw_finger_location(1, 0)
         # self.draw_finger_location(11, 1)
         # self.draw_finger_location(12, 2)
@@ -384,7 +385,8 @@ class Note(Widget):
 
     end_color = [0.1, 0.1, 1.0, 0.0]
     start_color = [0.8, 0.0, 0.0, 0.8]
-    fade_duration = 1
+    # fade_duration = 0.5
+    fade_duration = 0.0
 
     def __init__(self, fretboard, string_num, fret_num, **kwargs):
         super(Note, self).__init__(**kwargs)
@@ -406,20 +408,22 @@ class Note(Widget):
         self.ellipse.size = self.size
 
     def hide(self):
-        Animation.cancel_all(self.color, 'r,g,b,a')
-        anim = Animation(r=self.end_color[0],
+        if self.fade_duration <= 0:
+            self.color.rgba = self.end_color
+            return
+        # Animation.cancel_all(self.color, 'r,g,b,a')
+        Animation.cancel_all(self.color)
+        self.anim = Animation(r=self.end_color[0],
                          g=self.end_color[1],
                          b=self.end_color[2],
                          a=self.end_color[3],
                          duration=self.fade_duration)
-        anim.start(self.color)
+        self.anim.start(self.color)
 
     def show(self):
-        Animation.cancel_all(self.color, 'r,g,b,a')
-        self.color.r = self.start_color[0]
-        self.color.g = self.start_color[1]
-        self.color.b = self.start_color[2]
-        self.color.a = self.start_color[3]
+        # print('note {} is cancelling and showing'.format(self.id))
+        Animation.cancel_all(self.color)
+        self.color.rgba = self.start_color
 
 class StringActivity(Widget):
 
