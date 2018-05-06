@@ -11,6 +11,7 @@ from kivy.graphics import Color, Ellipse, Line, Rectangle
 from fretboard.fretboard import Fretboard
 from fretboard.app_window import AppWindow
 from fretboard.midi import Midi, NoteFilter
+from kivy.uix.settings import SettingsWithTabbedPanel
 
 # root = Builder.load_string('''
 # FloatLayout:
@@ -39,8 +40,8 @@ class FretboardNavigator(App):
 
     def build(self):
         # return Label(text='Hello World')
-        midi_port = 'Fishman TriplePlay TP Guitar'
-        # midi_port = None
+        # midi_port = 'Fishman TriplePlay TP Guitar'
+        midi_port = None
         note_filter = NoteFilter()
         midi_config = Midi(note_filter, midi_port)
         app_window = AppWindow(midi_config)

@@ -13,7 +13,6 @@ class Fretboard(RelativeLayout):
 
 
     neck_taper = .08
-    # neck_taper = .5
     line_width = 5
     fret_width = 6
     margin_size = 10
@@ -36,7 +35,7 @@ class Fretboard(RelativeLayout):
     nut_color = (.902, .541, 0.0, 0.5)
 
     string_inset_ratio = .07
-    string_width = 3
+    string_guage_range = [14, 55]
     string_slot_width = 3
     fret_dot_locations = [3,5,7,9,12,15,17,19,21]
     fret_color = (0.3, 0.3, 0.3, 0.5)
@@ -126,19 +125,19 @@ class Fretboard(RelativeLayout):
         return self.neck_length() - (self.string_box_width + self.nut_width())
 
     def draw_nut(self):
-        hite = self.fretboard_height()
-        taper_amt = hite * self.neck_taper * 0.5
+        max_fretboard_height = self.fretboard_height()
+        taper_amt = max_fretboard_height * self.neck_taper * 0.5
         neck_len = self.neck_length()
         nut_width = self.nut_width(neck_len=neck_len)
         relative_taper_amt = ((neck_len - nut_width) / neck_len) * taper_amt
         points = (self.margin_size + nut_width,
                   self.margin_size + relative_taper_amt,
                   self.margin_size + nut_width,
-                  self.margin_size + hite - relative_taper_amt)
+                  self.margin_size + max_fretboard_height - relative_taper_amt)
         Color(0, 0, 0, group='fb')
         Line(points=points, width=self.string_box_line_width, cap='round', group='fb')
         Color(*self.nut_color, group='fb')
-        Rectangle(pos=(self.margin_size, self.margin_size + relative_taper_amt), size=(nut_width, hite - relative_taper_amt*2), group='fb')
+        Rectangle(pos=(self.margin_size, self.margin_size + relative_taper_amt), size=(nut_width, max_fretboard_height - relative_taper_amt*2), group='fb')
         self.draw_nut_string_slots()
 
     def draw_nut_string_slots(self):
@@ -151,15 +150,21 @@ class Fretboard(RelativeLayout):
             Line(points=(start_x, self.margin_size + offset, end_x, self.margin_size + offset), width=self.string_slot_width, cap='round', group='fb')
 
     def draw_strings(self):
+
         nut_width = self.nut_width()
         start_x = self.margin_size + nut_width
         end_x = self.width - (self.margin_size + self.string_box_width)
         start_offsets = self.get_string_locations(0)
         end_offsets = self.get_string_locations(self.fretboard_length())
         Color(0, 0, 0, group='fb')
+        string_guage_width_ratio = .00035
+        max_fretboard_height = self.fretboard_height()
+        guage_step = (abs(self.string_guage_range[0] - self.string_guage_range[1])/self.tuning.get_num_strings()) * string_guage_width_ratio*max_fretboard_height
         for string_num in range(0, self.tuning.get_num_strings()):
-            Line(points=(start_x, self.margin_size + start_offsets[string_num],
-                         end_x, self.margin_size + end_offsets[string_num]), width=self.string_width, cap='round', group='fb')
+            string_width = self.string_guage_range[0]*string_guage_width_ratio*max_fretboard_height + guage_step*string_num
+            print('string {} has width {}'.format(string_num+1, string_width))
+            Line(points=(self.margin_size, self.margin_size + start_offsets[string_num], start_x, self.margin_size + start_offsets[string_num],
+                         end_x, self.margin_size + end_offsets[string_num]), width=min(10, max(string_width, 1)), cap='none', group='fb')
 
 
     def nut_width(self, neck_len=None):
@@ -185,7 +190,7 @@ class Fretboard(RelativeLayout):
             end_y = self.margin_size+hite-relative_taper_amt
             points = (fret_x, start_y, fret_x, end_y)
             Color(*self.fret_color, group='fb')
-            Line(points=points, width=self.fret_width, group='fb')
+            Line(points=points, width=self.fret_width, group='fb', cap='none')
             Color(0, 0, 0, group='fb')
             if fret_num in self.fret_dot_locations:
                 center_x = last_x + (fret_x - last_x)*.5 - dot_width*0.5
@@ -204,20 +209,16 @@ class Fretboard(RelativeLayout):
 
 
     def get_finger_location(self, string_num, fret_num):
-        # if fret_num == 0:
-        #     return 0
 
         fret_x = self.get_fret_x(fret_num)
         prev_fret_x = self.get_fret_x(fret_num - 1)
 
-        # neck_len = self.neck_length()
         finger_width = self.width*self.finger_width_ratio
         pos_x = fret_x - (fret_x - prev_fret_x)*self.finger_offset_ratio
         pos_y = self.get_string_locations(pos_x)[string_num] + self.margin_size
         if pos_x + finger_width*0.5 > fret_x:
             pos_x = fret_x - finger_width*0.5
 
-        # pos_x = fret_x
         return (pos_x, pos_y)
 
     def midi_note_on(self, midi_note, channel):
@@ -232,12 +233,7 @@ class Fretboard(RelativeLayout):
         note = self.notes.get(note_id)
         if note:
             note.show()
-            # note.hidden = False
             return
-
-        # if note_id in self.notes:
-            # print('note {} is already hear!!!!'.format(note_id))
-            # return
 
         loc = self.get_finger_location(string_num, fret_num)
 
@@ -341,7 +337,7 @@ class Fretboard(RelativeLayout):
     def draw_fretboard(self):
         Color(0, 0, 0, group='fb')
         print("my rect is pos: {} size: {}".format(self.rect.pos, self.rect.size))
-        Line(points=self.get_fretboard_outline(), width=self.line_width, cap='round', group='fb')
+        Line(points=self.get_fretboard_outline(), width=self.line_width, cap='round', joint='round', group='fb')
         self.draw_string_box()
         self.draw_nut()
         self.draw_frets()
