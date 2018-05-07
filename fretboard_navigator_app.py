@@ -9,9 +9,12 @@ from kivy.uix.widget import Widget
 
 from kivy.graphics import Color, Ellipse, Line, Rectangle
 from fretboard.fretboard import Fretboard
+from fretboard.fretboard import get_fretboard_adv_defaults, get_fretboard_defaults, get_window_defaults
 from fretboard.app_window import AppWindow
 from fretboard.midi import Midi, NoteFilter
-from kivy.uix.settings import SettingsWithTabbedPanel
+from kivy.uix.settings import SettingsWithTabbedPanel, SettingsWithSidebar
+from color_picker import SettingColorPicker
+from kivy.config import ConfigParser
 
 # root = Builder.load_string('''
 # FloatLayout:
@@ -39,6 +42,16 @@ from kivy.uix.settings import SettingsWithTabbedPanel
 class FretboardNavigator(App):
 
     def build(self):
+        self.settings_cls = SettingsWithSidebar
+        config = ConfigParser()
+        config.read('myconfig.ini')
+        s = SettingsWithSidebar()
+        s.register_type('colorpicker', SettingColorPicker)
+        s.add_kivy_panel()
+        s.add_json_panel('Fretboard',
+                         self.config,
+                         filename='settings.json')
+
         # return Label(text='Hello World')
         # midi_port = 'Fishman TriplePlay TP Guitar'
         midi_port = None
@@ -58,5 +71,25 @@ class FretboardNavigator(App):
         return app_window
         # return MyPaintWidget()
 
+    def build_config(self, config):
+        config.setdefaults('fretboard', get_fretboard_defaults())
+        config.setdefaults('fretboard_adv', get_fretboard_adv_defaults())
+        config.setdefaults('window', get_window_defaults())
+
+
+    def build_settings(self, settings):
+        settings.register_type('colorpicker', SettingColorPicker)
+        settings.add_json_panel('Fretboard',
+                         self.config,
+                         filename='settings.json')
+
+
+    def on_config_change(self, config, section,
+                         key, value):
+        print(config, section, key, value)
+
+    # def get_application_config(self):
+    #     return super(FretboardNavigator, self).get_application_config(
+    #         '~/.%(appname)s.ini')
 if __name__ == '__main__':
     FretboardNavigator().run()

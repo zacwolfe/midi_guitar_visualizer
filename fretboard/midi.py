@@ -27,7 +27,9 @@ class Midi(object):
 
         self.midi_callback(message.note, message.channel, message.type == 'note_on')
 
-
+    def shutdown(self):
+        if self.input_port:
+            self.input_port.close()
 
 class NoteFilter(object):
     note_queue = collections.deque(maxlen=4)

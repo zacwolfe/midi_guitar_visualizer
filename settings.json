@@ -1,0 +1,178 @@
+[
+  {
+    "type": "numeric",
+    "title": "Neck taper",
+    "desc": "The amount of neck taper for the fretboard as a percentage of the neck width",
+    "section": "fretboard",
+    "key": "neck_taper"
+  },
+  {
+    "type": "numeric",
+    "title": "Fretboard outline width",
+    "desc": "The line thickness of the fretboard outline",
+    "section": "fretboard_adv",
+    "key": "fretboard_outline_width"
+  },
+  {
+    "type": "numeric",
+    "title": "Fret thickness ratio",
+    "desc": "Thickness of the frets as a percentage of the neck length",
+    "section": "fretboard_adv",
+    "key": "fret_thickness_ratio"
+  },
+  {
+    "type": "numeric",
+    "title": "Margin size",
+    "desc": "The margin size around the fretboard in pixels",
+    "section": "fretboard",
+    "key": "margin_size"
+  },
+  {
+    "type": "numeric",
+    "title": "Height ratio",
+    "desc": "The height of the fretboard as a percentage of the neck length",
+    "section": "fretboard",
+    "key": "height_ratio"
+  },
+  {
+    "type": "numeric",
+    "title": "Number of frets",
+    "desc": "The number of frets on the fretboard",
+    "section": "fretboard",
+    "key": "num_frets"
+  },
+  {
+    "type": "numeric",
+    "title": "Initial width",
+    "desc": "The initial width of the fretboard window",
+    "section": "window",
+    "key": "initial_width"
+  },
+  {
+    "type": "numeric",
+    "title": "Horizontal location",
+    "desc": "The initial horizontal location of the fretboard window",
+    "section": "window",
+    "key": "initial_screen_loc_x"
+  },
+  {
+    "type": "numeric",
+    "title": "Vertical location",
+    "desc": "The initial vertical location of the fretboard window",
+    "section": "window",
+    "key": "initial_screen_loc_y"
+  },
+  {
+    "type": "numeric",
+    "title": "String bridge spacing",
+    "desc": "The width of the bridge box as a percentage of the neck width",
+    "section": "fretboard_adv",
+    "key": "string_box_width"
+  },
+  {
+    "type": "numeric",
+    "title": "String bridge line thickness",
+    "desc": "The line thickness of the bridge box",
+    "section": "fretboard_adv",
+    "key": "string_box_line_width"
+  },
+  {
+    "type": "numeric",
+    "title": "String indicator width",
+    "desc": "The width of the active string indicator graphic",
+    "section": "fretboard_adv",
+    "key": "string_activation_width"
+  },
+  {
+    "type": "numeric",
+    "title": "String indicator height",
+    "desc": "The height of the active string indicator graphic",
+    "section": "fretboard_adv",
+    "key": "string_activation_height"
+  },
+  {
+    "type": "colorpicker",
+    "title": "String indicator color",
+    "desc": "Color of the active string indicators",
+    "section": "fretboard",
+    "key": "string_activation_color"
+  },
+  {
+    "type": "numeric",
+    "title": "Nut width",
+    "desc": "The width of the nut as a percentage of neck length",
+    "section": "fretboard",
+    "key": "nut_width_ratio"
+  },
+  {
+    "type": "numeric",
+    "title": "Nut line thickness",
+    "desc": "The line thickness of the nut outline",
+    "section": "fretboard_adv",
+    "key": "nut_line_width"
+  },
+  {
+    "type": "numeric",
+    "title": "Nut slot width",
+    "desc": "The thickness of the nut string slots in pixels",
+    "section": "fretboard_adv",
+    "key": "nut_slot_width"
+  },
+  {
+    "type": "colorpicker",
+    "title": "Nut color",
+    "desc": "Color of the nut",
+    "section": "fretboard",
+    "key": "nut_color"
+  },
+  {
+    "type": "colorpicker",
+    "title": "Fret color",
+    "desc": "Color of the frets",
+    "section": "fretboard",
+    "key": "fret_color"
+  },
+  {
+    "type": "numeric",
+    "title": "Dot width ratio",
+    "desc": "The width of the fretboard dots as a percentage of the neck length",
+    "section": "fretboard_adv",
+    "key": "dot_width_ratio"
+  },
+  {
+    "type": "numeric",
+    "title": "Dot height ratio",
+    "desc": "The height of the fretboard dots as a percentage of the neck width",
+    "section": "fretboard_adv",
+    "key": "dot_height_ratio"
+  },
+  {
+    "type": "numeric",
+    "title": "Finger offset",
+    "desc": "The offset of the finger position on the string toward the nut as a percentage of the distance between frets",
+    "section": "fretboard_adv",
+    "key": "finger_offset_ratio"
+  },
+  {
+    "type": "numeric",
+    "title": "Finger width",
+    "desc": "The width of the finger indicator as a percentage of the neck length",
+    "section": "fretboard_adv",
+    "key": "finger_width_ratio"
+  },
+  {
+    "type": "numeric",
+    "title": "Finger height",
+    "desc": "The height of the finger indicator as a percentage of the neck width",
+    "section": "fretboard_adv",
+    "key": "finger_height_ratio"
+  },
+  {
+    "type": "colorpicker",
+    "title": "Finger color",
+    "desc": "Color of the finger indicator",
+    "section": "fretboard",
+    "key": "finger_color"
+  }
+
+]

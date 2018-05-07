@@ -2,22 +2,62 @@ from kivy.uix.widget import Widget
 from kivy.uix.button import Button
 from kivy.graphics import Color, Ellipse, Line, Rectangle
 from kivy.core.window import Window
-from kivy.uix.stacklayout import StackLayout
-from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.relativelayout import RelativeLayout
-from kivy.config import Config
 from kivy.properties import BooleanProperty, ListProperty
 from kivy.animation import Animation, AnimationTransition
+import kivy.utils as utils
+
+def get_fretboard_adv_defaults():
+    return {
+        'fretboard_outline_width': 5,
+        'fret_thickness_ratio': 0.002,
+        'string_box_width': 50,
+        'string_box_line_width': 3,
+        'string_activation_width': 30,
+        'string_activation_height': 30,
+        'nut_line_width': 3,
+        'nut_slot_width': 3,
+        'string_inset_ratio': .07,
+        'dot_width_ratio': 0.015,
+        'dot_height_ratio': 0.015,
+        'finger_offset_ratio': 0.2,
+        'finger_width_ratio': 0.02,
+        'finger_height_ratio': 0.02
+    }
+
+def get_fretboard_defaults():
+    return {
+        'neck_taper': .08,
+        'margin_size': 10,
+        'height_ratio': .18,
+        'num_frets': 22,
+        'fret_color': utils.get_hex_from_color((0.3, 0.3, 0.3, 0.5)),
+        'string_activation_color': utils.get_hex_from_color((0.0, 1.0, 0.0, 1.0)),
+        'nut_width_ratio': .01,
+        'nut_color': utils.get_hex_from_color((.902, .541, 0.0, 0.5)),
+        'finger_color': utils.get_hex_from_color((0.1, 0.1, 1.0, 0.8))
+    }
+
+def get_window_defaults():
+    return {
+        'initial_width': 1800,
+        'initial_screen_loc_x': 50,
+        'initial_screen_loc_y': 400,
+    }
+
 
 class Fretboard(RelativeLayout):
-
+    # need special setting item for these
+    string_guage_range = [14, 45]
+    fret_dot_locations = [3, 5, 7, 9, 12, 15, 17, 19, 21]
 
     neck_taper = .08
-    line_width = 5
-    fret_width = 6
+    fretboard_outline_width = 5
+    fret_thickness_ratio = 0.002
     margin_size = 10
     height_ratio = .18
     num_frets = 22
+    fret_color = (0.3, 0.3, 0.3, 0.5)
 
     initial_width = 1800
     initial_screen_loc_x = 50
@@ -33,12 +73,9 @@ class Fretboard(RelativeLayout):
     nut_width_ratio = .01
     nut_line_width = 3
     nut_color = (.902, .541, 0.0, 0.5)
+    nut_slot_width = 3
 
     string_inset_ratio = .07
-    string_guage_range = [14, 55]
-    string_slot_width = 3
-    fret_dot_locations = [3,5,7,9,12,15,17,19,21]
-    fret_color = (0.3, 0.3, 0.3, 0.5)
 
     dot_width_ratio = 0.015
     dot_height_ratio = 0.015
@@ -47,6 +84,7 @@ class Fretboard(RelativeLayout):
     finger_width_ratio = 0.02
     finger_height_ratio = 0.02
     finger_color = (0.1, 0.1, 1.0, 0.8)
+
 
 
     # Config.set('graphics', 'width', str(initial_width))
@@ -147,7 +185,7 @@ class Fretboard(RelativeLayout):
         end_x = start_x + nut_width
         Color(0, 0, 0, group='fb')
         for offset in self.get_string_locations(0):
-            Line(points=(start_x, self.margin_size + offset, end_x, self.margin_size + offset), width=self.string_slot_width, cap='round', group='fb')
+            Line(points=(start_x, self.margin_size + offset, end_x, self.margin_size + offset), width=self.nut_slot_width, cap='round', group='fb')
 
     def draw_strings(self):
 
@@ -181,16 +219,17 @@ class Fretboard(RelativeLayout):
         nut_width = self.nut_width(neck_len=neck_len)
         dot_width = neck_len * self.dot_width_ratio
         dot_height = neck_len * self.dot_height_ratio
+        fret_thickness = neck_len*self.fret_thickness_ratio
 
         last_x = 0
         for fret_num in range(1, self.num_frets):
             fret_x = self.get_fret_x(fret_num)
-            relative_taper_amt = ((neck_len - (nut_width + fret_x)) / neck_len) * taper_amt + self.fret_width # adjust for line cap
+            relative_taper_amt = ((neck_len - (nut_width + fret_x)) / neck_len) * taper_amt # adjust for line cap
             start_y = self.margin_size+relative_taper_amt
             end_y = self.margin_size+hite-relative_taper_amt
             points = (fret_x, start_y, fret_x, end_y)
             Color(*self.fret_color, group='fb')
-            Line(points=points, width=self.fret_width, group='fb', cap='none')
+            Line(points=points, width=fret_thickness, group='fb', cap='none')
             Color(0, 0, 0, group='fb')
             if fret_num in self.fret_dot_locations:
                 center_x = last_x + (fret_x - last_x)*.5 - dot_width*0.5
@@ -337,7 +376,7 @@ class Fretboard(RelativeLayout):
     def draw_fretboard(self):
         Color(0, 0, 0, group='fb')
         print("my rect is pos: {} size: {}".format(self.rect.pos, self.rect.size))
-        Line(points=self.get_fretboard_outline(), width=self.line_width, cap='round', joint='round', group='fb')
+        Line(points=self.get_fretboard_outline(), width=self.fretboard_outline_width, cap='round', joint='round', group='fb')
         self.draw_string_box()
         self.draw_nut()
         self.draw_frets()
