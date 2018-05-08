@@ -1,8 +1,10 @@
 from kivy.graphics import Rectangle
 from kivy.core.window import Window
 from kivy.uix.relativelayout import RelativeLayout
+from kivy.config import Config
 from .fretboard import Fretboard
 from .tunings import P4Tuning
+
 
 
 class AppWindow(RelativeLayout):

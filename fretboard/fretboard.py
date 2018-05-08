@@ -29,7 +29,7 @@ def get_fretboard_defaults():
     return {
         'neck_taper': .08,
         'margin_size': 10,
-        'height_ratio': .18,
+        'height_ratio': .36,
         'num_frets': 22,
         'fret_color': utils.get_hex_from_color((0.3, 0.3, 0.3, 0.5)),
         'string_activation_color': utils.get_hex_from_color((0.0, 1.0, 0.0, 1.0)),
@@ -55,13 +55,8 @@ class Fretboard(RelativeLayout):
     fretboard_outline_width = 5
     fret_thickness_ratio = 0.002
     margin_size = 10
-    height_ratio = .18
     num_frets = 22
     fret_color = (0.3, 0.3, 0.3, 0.5)
-
-    initial_width = 1800
-    initial_screen_loc_x = 50
-    initial_screen_loc_y = 400
 
     string_box_width = 50
     string_box_line_width = 3

@@ -119,6 +119,13 @@
     "key": "nut_slot_width"
   },
   {
+    "type": "numeric",
+    "title": "String insets",
+    "desc": "The amount that strings are inset from the edges of the neck as a percentage of neck width",
+    "section": "fretboard_adv",
+    "key": "string_inset_ratio"
+  },
+  {
     "type": "colorpicker",
     "title": "Nut color",
     "desc": "Color of the nut",

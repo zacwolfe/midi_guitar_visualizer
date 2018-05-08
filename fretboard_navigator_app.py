@@ -3,56 +3,18 @@ kivy.require('1.10.0') # replace with your current kivy version !
 
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.uix.label import Label
-from kivy.lang import Builder
-from kivy.uix.widget import Widget
 
-from kivy.graphics import Color, Ellipse, Line, Rectangle
-from fretboard.fretboard import Fretboard
 from fretboard.fretboard import get_fretboard_adv_defaults, get_fretboard_defaults, get_window_defaults
 from fretboard.app_window import AppWindow
 from fretboard.midi import Midi, NoteFilter
-from kivy.uix.settings import SettingsWithTabbedPanel, SettingsWithSidebar
+from kivy.uix.settings import SettingsWithSidebar
 from color_picker import SettingColorPicker
-from kivy.config import ConfigParser
-
-# root = Builder.load_string('''
-# FloatLayout:
-#     canvas.before:
-#         Color:
-#             rgba: 0, 1, 0, 1
-#         Rectangle:
-#             # self here refers to the widget i.e FloatLayout
-#             pos: self.pos
-#             size: self.size
-#     Button:
-#         text: 'Hello World!!'
-#         size_hint: .5, .5
-#         pos_hint: {'center_x':.5, 'center_y': .5}
-# ''')
-
-# class MyPaintWidget(Widget):
-#
-#     def on_touch_down(self, touch):
-#         with self.canvas:
-#             Color(1, 1, 0)
-#             d = 30.
-#             Ellipse(pos=(touch.x - d / 2, touch.y - d / 2), size=(d, d))
 
 class FretboardNavigator(App):
 
     def build(self):
         self.settings_cls = SettingsWithSidebar
-        config = ConfigParser()
-        config.read('myconfig.ini')
-        s = SettingsWithSidebar()
-        s.register_type('colorpicker', SettingColorPicker)
-        s.add_kivy_panel()
-        s.add_json_panel('Fretboard',
-                         self.config,
-                         filename='settings.json')
 
-        # return Label(text='Hello World')
         # midi_port = 'Fishman TriplePlay TP Guitar'
         midi_port = None
         note_filter = NoteFilter()
@@ -69,7 +31,6 @@ class FretboardNavigator(App):
         Clock.schedule_once(lambda dt: my_callback(), 3)
         # Clock.schedule_once(lambda dt:my_callback2, 6)
         return app_window
-        # return MyPaintWidget()
 
     def build_config(self, config):
         config.setdefaults('fretboard', get_fretboard_defaults())
