@@ -209,6 +209,13 @@
     "desc": "Max age of note for tracer inclusion in seconds",
     "section": "fretboard_adv",
     "key": "note_expiration"
+  },
+  {
+    "type": "numeric",
+    "title": "Tracer fade time",
+    "desc": "Tracer fade time in seconds",
+    "section": "fretboard",
+    "key": "tracer_fade_time"
   }
 
 ]

@@ -43,8 +43,9 @@ def get_fretboard_defaults():
         'nut_width_ratio': .01,
         'nut_color': utils.get_hex_from_color((.902, .541, 0.0, 0.5)),
         'finger_color': utils.get_hex_from_color((0.1, 0.1, 1.0, 0.8)),
-        'show_tracers': True,
-        'note_fade_time': 0.0
+        'show_tracers': 1,
+        'note_fade_time': 0.0,
+        'tracer_fade_time': 0.5,
     }
 
 def get_window_defaults():
@@ -93,9 +94,11 @@ class Fretboard(RelativeLayout):
     finger_height_ratio = ConfigParserProperty(0.0, 'fretboard_adv', 'finger_height_ratio', 'app', val_type=float)
     finger_color = (0.1, 0.1, 1.0, 0.8)
 
-    show_tracers = ConfigParserProperty(True, 'fretboard', 'show_tracers', 'app', val_type=bool)
+    show_tracers = ConfigParserProperty(1, 'fretboard', 'show_tracers', 'app', val_type=int)
     note_fade_time = ConfigParserProperty(0.0, 'fretboard', 'note_fade_time', 'app', val_type=float)
     note_expiration = ConfigParserProperty(0.0, 'fretboard_adv', 'note_expiration', 'app', val_type=float)
+    tracer_fade_time = ConfigParserProperty(0.0, 'fretboard', 'tracer_fade_time', 'app', val_type=float)
+
 
 
     # Config.set('graphics', 'width', str(initial_width))
@@ -310,7 +313,7 @@ class Fretboard(RelativeLayout):
         if self.show_tracers and self.last_note:
 
             if self.last_note[0] != note and curr_time - self.last_note[1] < self.note_expiration*1000:
-                tracer = Tracer(self, self.last_note[0].string_num,self.last_note[0].fret_num , note.string_num, note.fret_num)
+                tracer = Tracer(self, self.last_note[0].string_num,self.last_note[0].fret_num , note.string_num, note.fret_num, self.tracer_fade_time)
                 self.add_widget(tracer)
 
         self.last_note = (note, curr_time)
@@ -528,8 +531,9 @@ class Tracer(Widget):
     # fade_duration = 0.5
     fade_duration = 2.0
 
-    def __init__(self, fretboard, string_start, fret_start, string_end, fret_end, **kwargs):
+    def __init__(self, fretboard, string_start, fret_start, string_end, fret_end, fade_duration, **kwargs):
         super(Tracer, self).__init__(**kwargs)
+        self.fade_duration = max(0.01, fade_duration)
         self.fretboard = fretboard
         self.string_start = string_start
         self.fret_start = fret_start
@@ -540,7 +544,7 @@ class Tracer(Widget):
         with self.canvas:
             self.color = Color(*self.start_color)
             points = fretboard.get_tracer_points(self)
-            print("drawing goddam line {}".format(points))
+            # print("drawing goddam line {}".format(points))
             self.outer_line = Line(points=points, width=11, cap='round')
             self.animate()
 
@@ -567,7 +571,7 @@ class Tracer(Widget):
         self.anim.bind(on_complete=self.hide)
         self.anim.start(self.color)
 
-    def hide(self, animation, widget):
+    def hide(self, *args):
         self.fretboard.remove_widget(self)
 
     def show(self):
