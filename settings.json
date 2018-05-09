@@ -176,13 +176,6 @@
     "key": "finger_width_ratio"
   },
   {
-    "type": "numeric",
-    "title": "Finger height",
-    "desc": "The height of the finger indicator as a percentage of the neck width",
-    "section": "fretboard_adv",
-    "key": "finger_height_ratio"
-  },
-  {
     "type": "colorpicker",
     "title": "Finger color",
     "desc": "Color of the finger indicator",
@@ -216,6 +209,13 @@
     "desc": "Tracer fade time in seconds",
     "section": "fretboard",
     "key": "tracer_fade_time"
+  },
+  {
+    "type": "numeric",
+    "title": "Tracer line ratio",
+    "desc": "The thickness of the tracer line as a percentage of the window width (weird right?)",
+    "section": "fretboard",
+    "key": "tracer_line_ratio"
   }
 
 ]
