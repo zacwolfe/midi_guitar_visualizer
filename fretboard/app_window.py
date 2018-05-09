@@ -1,22 +1,25 @@
 from kivy.graphics import Rectangle
 from kivy.core.window import Window
 from kivy.uix.relativelayout import RelativeLayout
-from kivy.config import Config
+from kivy.properties import ConfigParserProperty
 from .fretboard import Fretboard
 from .tunings import P4Tuning
-
+from .midi import Midi, NoteFilter
 
 
 class AppWindow(RelativeLayout):
 
-    height_ratio = .36
-    initial_width = 1800
-    initial_screen_loc_x = 50
-    initial_screen_loc_y = 400
+    height_ratio = ConfigParserProperty(0.0, 'window', 'height_ratio', 'app', val_type=float)
+    initial_width = ConfigParserProperty(0, 'window', 'initial_width', 'app', val_type=int)
+    initial_screen_loc_x = ConfigParserProperty(0, 'window', 'initial_screen_loc_x', 'app', val_type=int)
+    initial_screen_loc_y = ConfigParserProperty(0, 'window', 'initial_screen_loc_y', 'app', val_type=int)
+    midi_port = ConfigParserProperty(0, 'midi', 'midi_port', 'app')
 
-    def __init__(self, midi_config, **kwargs):
+    def __init__(self, **kwargs):
         super(AppWindow, self).__init__(**kwargs)
-        self.midi_config = midi_config
+        self.note_filter = NoteFilter()
+        if self.midi_port:
+            self.midi_config = Midi(self.note_filter, self.midi_port, self.midi_message_received)
 
         with self.canvas:
             Window.size = (self.initial_width, self.initial_width * self.height_ratio)
@@ -36,14 +39,20 @@ class AppWindow(RelativeLayout):
             pass
 
         self.bind(size=self.size_changed)
-        self.midi_config.open_input(self.midi_message_received)
+
+        self.init_midi()
+
 
     def size_changed(self, *args):
         self.rect.pos = self.pos
         self.rect.size = self.size
 
-    def start_listening_midi(self):
+    def init_midi(self):
         self.midi_config.open_input()
+
+    def reload_midi(self):
+        self.midi_config.set_default_port(self.midi_port, open_port=True)
+
 
     def midi_message_received(self, midi_note, channel, on):
         # print('midi!!! {}'.format(message))

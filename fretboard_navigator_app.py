@@ -6,9 +6,11 @@ from kivy.clock import Clock
 
 from fretboard.fretboard import get_fretboard_adv_defaults, get_fretboard_defaults, get_window_defaults
 from fretboard.app_window import AppWindow
-from fretboard.midi import Midi, NoteFilter
+from fretboard.midi import Midi, NoteFilter, get_midi_defaults
+from dynamic_settings_item import SettingDynamicOptions
 from kivy.uix.settings import SettingsWithSidebar
 from color_picker import SettingColorPicker
+import constants
 
 class FretboardNavigator(App):
 
@@ -16,10 +18,7 @@ class FretboardNavigator(App):
         self.settings_cls = SettingsWithSidebar
 
         # midi_port = 'Fishman TriplePlay TP Guitar'
-        midi_port = None
-        note_filter = NoteFilter()
-        midi_config = Midi(note_filter, midi_port)
-        app_window = AppWindow(midi_config)
+        app_window = AppWindow()
         # fretb = Fretboard()
         def my_callback():
             app_window.fretboard.add_some_stuff()
@@ -29,6 +28,7 @@ class FretboardNavigator(App):
             app_window.fretboard.remove_some_stuff()
 
         Clock.schedule_once(lambda dt: my_callback(), 3)
+
         # Clock.schedule_once(lambda dt:my_callback2, 6)
         return app_window
 
@@ -36,18 +36,20 @@ class FretboardNavigator(App):
         config.setdefaults('fretboard', get_fretboard_defaults())
         config.setdefaults('fretboard_adv', get_fretboard_adv_defaults())
         config.setdefaults('window', get_window_defaults())
+        config.setdefaults('midi', get_midi_defaults())
 
 
     def build_settings(self, settings):
         settings.register_type('colorpicker', SettingColorPicker)
-        settings.add_json_panel('Fretboard',
-                         self.config,
-                         filename='settings.json')
+        settings.register_type('dynamic_options', SettingDynamicOptions)
+        settings.add_json_panel('Fretboard', self.config, filename='settings.json')
 
 
     def on_config_change(self, config, section,
                          key, value):
-        print(config, section, key, value)
+        print('My huge ass has reconfigured....',config, section, key, value)
+        if section == 'midi':
+            self.root.reload_midi()
 
     # def get_application_config(self):
     #     return super(FretboardNavigator, self).get_application_config(

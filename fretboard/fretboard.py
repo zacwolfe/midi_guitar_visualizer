@@ -1,11 +1,16 @@
+import constants
 from kivy.uix.widget import Widget
+from kivy.app import App
 from kivy.uix.button import Button
+from kivy.config import ConfigParser, Config
 from kivy.graphics import Color, Ellipse, Line, Rectangle
 from kivy.core.window import Window
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.properties import BooleanProperty, ListProperty
 from kivy.animation import Animation, AnimationTransition
 import kivy.utils as utils
+from kivy.properties import ConfigParserProperty
+
 
 def get_fretboard_adv_defaults():
     return {
@@ -29,7 +34,6 @@ def get_fretboard_defaults():
     return {
         'neck_taper': .08,
         'margin_size': 10,
-        'height_ratio': .36,
         'num_frets': 22,
         'fret_color': utils.get_hex_from_color((0.3, 0.3, 0.3, 0.5)),
         'string_activation_color': utils.get_hex_from_color((0.0, 1.0, 0.0, 1.0)),
@@ -43,41 +47,45 @@ def get_window_defaults():
         'initial_width': 1800,
         'initial_screen_loc_x': 50,
         'initial_screen_loc_y': 400,
+        'height_ratio': .36,
     }
 
 
 class Fretboard(RelativeLayout):
+
     # need special setting item for these
     string_guage_range = [14, 45]
     fret_dot_locations = [3, 5, 7, 9, 12, 15, 17, 19, 21]
 
-    neck_taper = .08
-    fretboard_outline_width = 5
-    fret_thickness_ratio = 0.002
-    margin_size = 10
-    num_frets = 22
+    neck_taper =ConfigParserProperty(0.0, 'fretboard', 'neck_taper', 'app', val_type=float)
+    fretboard_outline_width = ConfigParserProperty(0, 'fretboard_adv', 'fretboard_outline_width', 'app', val_type=int)
+    fret_thickness_ratio = ConfigParserProperty(0.0, 'fretboard_adv', 'fret_thickness_ratio', 'app', val_type=float)
+    margin_size = ConfigParserProperty(0, 'fretboard', 'margin_size', 'app', val_type=int)
+    num_frets = ConfigParserProperty(0, 'fretboard', 'num_frets', 'app', val_type=int)
     fret_color = (0.3, 0.3, 0.3, 0.5)
 
-    string_box_width = 50
-    string_box_line_width = 3
-    string_activation_width = 30
-    string_activation_height = 30
+    # fret_color = utils.get_color_from_hex(ConfigParserProperty(0, 'fretboard', 'fret_color', 'app'))
+
+    string_box_width = ConfigParserProperty(0.0, 'fretboard_adv', 'string_box_width', 'app', val_type=int)
+    string_box_line_width = ConfigParserProperty(0.0, 'fretboard_adv', 'string_box_line_width', 'app', val_type=int)
+    string_activation_width = ConfigParserProperty(0.0, 'fretboard_adv', 'string_activation_width', 'app', val_type=int)
+    string_activation_height = ConfigParserProperty(0.0, 'fretboard_adv', 'string_activation_height', 'app', val_type=int)
     string_activation_color = (0.0, 1.0, 0.0, 1.0)
 
 
-    nut_width_ratio = .01
-    nut_line_width = 3
+    nut_width_ratio = ConfigParserProperty(0.0, 'fretboard', 'nut_width_ratio', 'app', val_type=float)
+    nut_line_width = ConfigParserProperty(0.0, 'fretboard_adv', 'nut_line_width', 'app', val_type=int)
     nut_color = (.902, .541, 0.0, 0.5)
-    nut_slot_width = 3
+    nut_slot_width = ConfigParserProperty(0.0, 'fretboard_adv', 'nut_slot_width', 'app', val_type=int)
 
-    string_inset_ratio = .07
+    string_inset_ratio = ConfigParserProperty(0.0, 'fretboard_adv', 'string_inset_ratio', 'app', val_type=float)
 
-    dot_width_ratio = 0.015
-    dot_height_ratio = 0.015
+    dot_width_ratio = ConfigParserProperty(0.0, 'fretboard_adv', 'dot_width_ratio', 'app', val_type=float)
+    dot_height_ratio = ConfigParserProperty(0.0, 'fretboard_adv', 'dot_height_ratio', 'app', val_type=float)
 
-    finger_offset_ratio = 0.2
-    finger_width_ratio = 0.02
-    finger_height_ratio = 0.02
+    finger_offset_ratio = ConfigParserProperty(0.0, 'fretboard_adv', 'finger_offset_ratio', 'app', val_type=float)
+    finger_width_ratio = ConfigParserProperty(0.0, 'fretboard_adv', 'finger_width_ratio', 'app', val_type=float)
+    finger_height_ratio = ConfigParserProperty(0.0, 'fretboard_adv', 'finger_height_ratio', 'app', val_type=float)
     finger_color = (0.1, 0.1, 1.0, 0.8)
 
 
@@ -91,6 +99,15 @@ class Fretboard(RelativeLayout):
     def __init__(self, tuning, **kwargs):
         super(Fretboard, self).__init__(**kwargs)
 
+        def get_color(key):
+            return utils.get_color_from_hex(ConfigParser.get_configparser('app').get('fretboard',key))
+
+        print('fretcolor is {}'.format(get_color('fret_color')))
+
+        self.fret_color = get_color('fret_color')
+        self.string_activation_color = get_color('string_activation_color')
+        self.nut_color = get_color('nut_color')
+        self.finger_color = get_color('finger_color')
         self.tuning = tuning
         self.notes = {}
 

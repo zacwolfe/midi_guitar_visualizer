@@ -7,6 +7,17 @@ from kivy.metrics import dp
 from kivy.uix.colorpicker import ColorPicker
 from kivy.uix.button import Button
 
+from kivy.lang import Builder
+
+Builder.load_string(
+'''#:import get_color kivy.utils.get_color_from_hex
+<SettingColorPicker>:
+    Label:
+        color: get_color(root.value) if root.value else (1,1,1,1.)
+        text: root.value or ''
+''')
+
+
 class SettingColorPicker(SettingItem):
     '''Implementation of a string setting on top of a :class:`SettingItem`.
     It is visualized with a :class:`~kivy.uix.label.Label` widget that, when
@@ -86,3 +97,6 @@ class SettingColorPicker(SettingItem):
         # all done, open the popup !
         popup.open()
 
+    def on_value(self, instance, value):
+        print('i got a fucking value {}'.format(value))
+        super(SettingColorPicker, self).on_value(instance, value)

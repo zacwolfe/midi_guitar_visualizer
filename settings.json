@@ -1,5 +1,13 @@
 [
   {
+    "type": "dynamic_options",
+    "title": "Midi port",
+    "desc": "Midi port to use for guitar input",
+    "section": "midi",
+    "key": "midi_port",
+    "function_string": "fretboard.midi.get_midi_ports"
+  },
+  {
     "type": "numeric",
     "title": "Neck taper",
     "desc": "The amount of neck taper for the fretboard as a percentage of the neck width",
@@ -31,7 +39,7 @@
     "type": "numeric",
     "title": "Height ratio",
     "desc": "The height of the fretboard as a percentage of the neck length",
-    "section": "fretboard",
+    "section": "window",
     "key": "height_ratio"
   },
   {
