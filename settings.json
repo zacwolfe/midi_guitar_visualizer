@@ -188,6 +188,27 @@
     "desc": "Color of the finger indicator",
     "section": "fretboard",
     "key": "finger_color"
+  },
+  {
+    "type": "bool",
+    "title": "Show tracers",
+    "desc": "Connect notes with tracer lines to reveal patterns",
+    "section": "fretboard",
+    "key": "show_tracers"
+  },
+  {
+    "type": "numeric",
+    "title": "Note fade time",
+    "desc": "Note fade time in seconds",
+    "section": "fretboard",
+    "key": "note_fade_time"
+  },
+  {
+    "type": "numeric",
+    "title": "Note expiration",
+    "desc": "Max age of note for tracer inclusion in seconds",
+    "section": "fretboard_adv",
+    "key": "note_expiration"
   }
 
 ]

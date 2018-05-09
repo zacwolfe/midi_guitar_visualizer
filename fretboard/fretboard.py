@@ -1,4 +1,5 @@
 import constants
+from constants import current_time_millis
 from kivy.uix.widget import Widget
 from kivy.app import App
 from kivy.uix.button import Button
@@ -10,6 +11,7 @@ from kivy.properties import BooleanProperty, ListProperty
 from kivy.animation import Animation, AnimationTransition
 import kivy.utils as utils
 from kivy.properties import ConfigParserProperty
+
 
 
 def get_fretboard_adv_defaults():
@@ -27,7 +29,8 @@ def get_fretboard_adv_defaults():
         'dot_height_ratio': 0.015,
         'finger_offset_ratio': 0.2,
         'finger_width_ratio': 0.02,
-        'finger_height_ratio': 0.02
+        'finger_height_ratio': 0.02,
+        'note_expiration': 0.5
     }
 
 def get_fretboard_defaults():
@@ -39,7 +42,9 @@ def get_fretboard_defaults():
         'string_activation_color': utils.get_hex_from_color((0.0, 1.0, 0.0, 1.0)),
         'nut_width_ratio': .01,
         'nut_color': utils.get_hex_from_color((.902, .541, 0.0, 0.5)),
-        'finger_color': utils.get_hex_from_color((0.1, 0.1, 1.0, 0.8))
+        'finger_color': utils.get_hex_from_color((0.1, 0.1, 1.0, 0.8)),
+        'show_tracers': True,
+        'note_fade_time': 0.0
     }
 
 def get_window_defaults():
@@ -88,6 +93,9 @@ class Fretboard(RelativeLayout):
     finger_height_ratio = ConfigParserProperty(0.0, 'fretboard_adv', 'finger_height_ratio', 'app', val_type=float)
     finger_color = (0.1, 0.1, 1.0, 0.8)
 
+    show_tracers = ConfigParserProperty(True, 'fretboard', 'show_tracers', 'app', val_type=bool)
+    note_fade_time = ConfigParserProperty(0.0, 'fretboard', 'note_fade_time', 'app', val_type=float)
+    note_expiration = ConfigParserProperty(0.0, 'fretboard_adv', 'note_expiration', 'app', val_type=float)
 
 
     # Config.set('graphics', 'width', str(initial_width))
@@ -96,6 +104,7 @@ class Fretboard(RelativeLayout):
     # Config.set('graphics', 'left', 100)
     # Config.set('graphics', 'top', 10)
 
+    last_note = None
     def __init__(self, tuning, **kwargs):
         super(Fretboard, self).__init__(**kwargs)
 
@@ -284,17 +293,27 @@ class Fretboard(RelativeLayout):
         note = self.notes.get(note_id)
         if note:
             note.show()
-            return
+        else:
 
-        loc = self.get_finger_location(string_num, fret_num)
 
-        pos_hint = {'center_x': loc[0]/self.width, 'center_y': loc[1]/self.height}
-        size_hint = (self.finger_width_ratio, (self.finger_width_ratio * self.width / self.height))
-        # print('pos_hint is {}'.format(pos_hint))
+            loc = self.get_finger_location(string_num, fret_num)
 
-        note = Note(self, string_num, fret_num, pos_hint=pos_hint, size_hint=size_hint)
-        self.notes[note_id] = note
-        self.add_widget(note)
+            pos_hint = {'center_x': loc[0]/self.width, 'center_y': loc[1]/self.height}
+            size_hint = (self.finger_width_ratio, (self.finger_width_ratio * self.width / self.height))
+            # print('pos_hint is {}'.format(pos_hint))
+
+            note = Note(self, string_num, fret_num, self.note_fade_time, pos_hint=pos_hint, size_hint=size_hint)
+            self.notes[note_id] = note
+            self.add_widget(note)
+
+        curr_time = current_time_millis()
+        if self.show_tracers and self.last_note:
+
+            if self.last_note[0] != note and curr_time - self.last_note[1] < self.note_expiration*1000:
+                tracer = Tracer(self, self.last_note[0].string_num,self.last_note[0].fret_num , note.string_num, note.fret_num)
+                self.add_widget(tracer)
+
+        self.last_note = (note, curr_time)
 
 
     def note_off(self, string_num, fret_num):
@@ -317,6 +336,12 @@ class Fretboard(RelativeLayout):
         size_hint = (self.finger_width_ratio, (self.finger_width_ratio * self.width / self.height))
         note.pos_hint = pos_hint
         note.size_hint = size_hint
+
+    def get_tracer_points(self, tracer):
+        loc_start = self.get_finger_location(tracer.string_start, tracer.fret_start)
+        loc_end = self.get_finger_location(tracer.string_end, tracer.fret_end)
+        return loc_start + loc_end
+
 
     def draw_notes(self):
         pass
@@ -435,11 +460,12 @@ class Note(Widget):
     # fade_duration = 0.5
     fade_duration = 0.0
 
-    def __init__(self, fretboard, string_num, fret_num, **kwargs):
+    def __init__(self, fretboard, string_num, fret_num, note_fade_time, **kwargs):
         super(Note, self).__init__(**kwargs)
         self.fretboard = fretboard
         self.string_num = string_num
         self.fret_num = fret_num
+        self.fade_duration = note_fade_time
         self.id = _generate_note_id(string_num, fret_num)
         with self.canvas:
             self.color = Color(*self.start_color)
@@ -451,7 +477,6 @@ class Note(Widget):
     def do_update(self, *args):
         self.fretboard.update_note(self)
         self.ellipse.pos = self.pos
-
         self.ellipse.size = self.size
 
     def hide(self):
@@ -495,8 +520,66 @@ class StringActivity(Widget):
     def on_hidden(self, instance, value):
         self.do_draw()
 
+class Tracer(Widget):
+
+    end_color = [0.1, 0.1, 1.0, 0.0]
+    start_color = [0.8, 0.0, 0.0, 0.5]
+    inner_line_color = [0.0, 0.0, 0.0, 1]
+    # fade_duration = 0.5
+    fade_duration = 2.0
+
+    def __init__(self, fretboard, string_start, fret_start, string_end, fret_end, **kwargs):
+        super(Tracer, self).__init__(**kwargs)
+        self.fretboard = fretboard
+        self.string_start = string_start
+        self.fret_start = fret_start
+        self.string_end = string_end
+        self.fret_end = fret_end
+
+        self.id = _generate_tracer_id(string_start, fret_start, string_end, fret_end)
+        with self.canvas:
+            self.color = Color(*self.start_color)
+            points = fretboard.get_tracer_points(self)
+            print("drawing goddam line {}".format(points))
+            self.outer_line = Line(points=points, width=11, cap='round')
+            self.animate()
+
+        self.bind(pos=self.do_update)
+
+    def do_update(self, *args):
+        points = self.note_start.pos + self.note_end.pos
+        print("drawing line {}".format(points))
+        self.outer_line.points = points
+
+    def animate(self):
+        if self.fade_duration <= 0:
+            self.color.rgba = self.end_color
+            self.hide()
+            return
+        # Animation.cancel_all(self.color, 'r,g,b,a')
+        Animation.cancel_all(self.color)
+        self.anim = Animation(r=self.end_color[0],
+                         g=self.end_color[1],
+                         b=self.end_color[2],
+                         a=self.end_color[3],
+                         duration=self.fade_duration)
+
+        self.anim.bind(on_complete=self.hide)
+        self.anim.start(self.color)
+
+    def hide(self, animation, widget):
+        self.fretboard.remove_widget(self)
+
+    def show(self):
+        # print('note {} is cancelling and showing'.format(self.id))
+        Animation.cancel_all(self.color)
+        self.color.rgba = self.start_color
+
 def _generate_note_id(string_num, fret_num):
     return 'Note-{}.{}'.format(string_num, fret_num)
+
+def _generate_tracer_id(string_start, fret_start, string_end, fret_end):
+    return 'Tracer-{}.{}.{}.{}'.format(string_start, fret_start, string_end, fret_end)
 
 def _generate_string_id(string_num):
     return 'String-{}'.format(string_num)
