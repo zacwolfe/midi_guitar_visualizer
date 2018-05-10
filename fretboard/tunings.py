@@ -11,7 +11,8 @@ p = re.compile(REGEX)
 
 class Tuning(object):
 
-    def __init__(self):
+    def __init__(self, num_frets):
+        self.num_frets = num_frets
         self.num_strings = 6
         self.tuning = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2']
 
@@ -30,12 +31,23 @@ class Tuning(object):
         # print('midinote {} on chan {} converts to open string {} or {}'.format(midi_note, channel, note, from_midi(note)))
         return (channel, midi_note - note)
 
+    def is_impossible_note(self, channel, midi_note):
+        note = self.get_string_midi_note(channel)
+        return midi_note < note or midi_note - note > self.num_frets
+
+
+    def is_open_string(self, channel, midi_note):
+        return self.get_string_midi_note(channel) == midi_note
+
+    def get_distance(self, channel1, midi_note1, channel2, midi_note2):
+        return abs(self.get_string_and_fret(midi_note1, channel1)[1] - self.get_string_and_fret(midi_note2, channel2)[1]) + abs(channel1 - channel2)
+
 class StandardTuning(Tuning):
     pass
 
 class P4Tuning(Tuning):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, num_frets):
+        super().__init__(num_frets)
         self.tuning = ['F4', 'C4', 'G3', 'D3', 'A2', 'E2']
 
 def from_midi(midi):

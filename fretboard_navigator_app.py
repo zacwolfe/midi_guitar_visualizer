@@ -51,6 +51,9 @@ class FretboardNavigator(App):
         if section == 'midi':
             self.root.reload_midi()
 
+    def on_start(self):
+        print("I'm resumed")
+        self.root.init_midi()
     # def get_application_config(self):
     #     return super(FretboardNavigator, self).get_application_config(
     #         '~/.%(appname)s.ini')
