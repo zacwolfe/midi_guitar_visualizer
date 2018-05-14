@@ -47,9 +47,6 @@ m13 = [ 2,]
 dim = [ 11,]
 
 [[major]]
-dim7 = [ 11,]
-
-[[major]]
 m7b5 = [ 11,]
 
 [[major]]
@@ -191,9 +188,6 @@ m13 = [ 2,]
 dim = [ 9, 11,]
 
 [[melodic_minor]]
-dim7 = [ 9, 11,]
-
-[[melodic_minor]]
 m7b5 = [ 9, 11,]
 
 [[melodic_minor]]
@@ -267,9 +261,6 @@ m13 = [ 7,]
 
 [[bebop_dominant]]
 dim = [ 4,]
-
-[[bebop_dominant]]
-dim7 = [ 4,]
 
 [[bebop_dominant]]
 m7b5 = [ 4,]
