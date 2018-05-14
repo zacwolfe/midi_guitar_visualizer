@@ -1,0 +1,315 @@
+[[major]]
+M7 = [ 0, 5,]
+
+[[major]]
+maj9 = [ 0, 5,]
+
+[[major]]
+maj13 = [ 0,]
+
+[[major]]
+"maj13#11" = [ 5,]
+
+[[major]]
+add13 = [ 0, 5, 7,]
+
+[[major]]
+"6/9" = [ 0, 5,]
+
+[[major]]
+"M7#11" = [ 5,]
+
+[[major]]
+7 = [ 7,]
+
+[[major]]
+9 = [ 7,]
+
+[[major]]
+13 = [ 7,]
+
+[[major]]
+m7 = [ 2, 4, 9,]
+
+[[major]]
+m6 = [ 2,]
+
+[[major]]
+m9 = [ 2, 9,]
+
+[[major]]
+m11 = [ 2, 9,]
+
+[[major]]
+m13 = [ 2,]
+
+[[major]]
+dim = [ 11,]
+
+[[major]]
+dim7 = [ 11,]
+
+[[major]]
+m7b5 = [ 11,]
+
+[[major]]
+sus4 = [ 0, 2, 4, 7, 9,]
+
+[[major]]
+sus2 = [ 0, 2, 5, 7, 9,]
+
+[[major]]
+7sus4 = [ 2, 4, 7, 9,]
+
+[[major]]
+11 = [ 2, 7, 9,]
+
+[[major]]
+b9sus = [ 0, 2, 7, 9,]
+
+[[harmonic_minor]]
+M7 = [ 8,]
+
+[[harmonic_minor]]
+add13 = [ 8,]
+
+[[harmonic_minor]]
+"M7#11" = [ 8,]
+
+[[harmonic_minor]]
+7 = [ 7,]
+
+[[harmonic_minor]]
+"7#5" = [ 7,]
+
+[[harmonic_minor]]
+7b9 = [ 7,]
+
+[[harmonic_minor]]
+m7 = [ 5,]
+
+[[harmonic_minor]]
+mM7 = [ 0, 8,]
+
+[[harmonic_minor]]
+m6 = [ 5, 8,]
+
+[[harmonic_minor]]
+m9 = [ 5,]
+
+[[harmonic_minor]]
+m13 = [ 5,]
+
+[[harmonic_minor]]
+dim = [ 2, 5, 8, 11,]
+
+[[harmonic_minor]]
+dim7 = [ 2, 5,]
+
+[[harmonic_minor]]
+m7b5 = [ 2, 5,]
+
+[[harmonic_minor]]
+sus4 = [ 0, 7,]
+
+[[harmonic_minor]]
+sus2 = [ 0, 5,]
+
+[[harmonic_minor]]
+7sus4 = [ 7,]
+
+[[harmonic_minor]]
+b9sus = [ 0,]
+
+[[augmented]]
+M7 = [ 8,]
+
+[[augmented]]
+maj9 = [ 8,]
+
+[[augmented]]
+add13 = [ 3,]
+
+[[augmented]]
+7 = [ 0,]
+
+[[augmented]]
+"7#5" = [ 0,]
+
+[[augmented]]
+m7 = [ 0,]
+
+[[augmented]]
+dim = [ 4,]
+
+[[augmented]]
+sus4 = [ 3,]
+
+[[augmented]]
+sus2 = [ 8,]
+
+[[melodic_minor]]
+"maj13#11" = [ 3,]
+
+[[melodic_minor]]
+add13 = [ 5,]
+
+[[melodic_minor]]
+7 = [ 5, 7,]
+
+[[melodic_minor]]
+9 = [ 5, 7,]
+
+[[melodic_minor]]
+13 = [ 5,]
+
+[[melodic_minor]]
+"7#11" = [ 5,]
+
+[[melodic_minor]]
+"7#5" = [ 7, 11,]
+
+[[melodic_minor]]
+alt7 = [ 11,]
+
+[[melodic_minor]]
+"13#11" = [ 5,]
+
+[[melodic_minor]]
+m7 = [ 2,]
+
+[[melodic_minor]]
+mM7 = [ 0,]
+
+[[melodic_minor]]
+m6 = [ 0, 2,]
+
+[[melodic_minor]]
+m13 = [ 2,]
+
+[[melodic_minor]]
+dim = [ 9, 11,]
+
+[[melodic_minor]]
+dim7 = [ 9, 11,]
+
+[[melodic_minor]]
+m7b5 = [ 9, 11,]
+
+[[melodic_minor]]
+sus4 = [ 0, 2, 7,]
+
+[[melodic_minor]]
+sus2 = [ 0, 5, 7,]
+
+[[melodic_minor]]
+7sus4 = [ 2, 7,]
+
+[[melodic_minor]]
+11 = [ 7,]
+
+[[melodic_minor]]
+b9sus = [ 0, 7,]
+
+[[diminished]]
+add13 = [ 0, 3, 6, 9,]
+
+[[diminished]]
+7 = [ 0, 3, 6, 9,]
+
+[[diminished]]
+13 = [ 0, 3, 6, 9,]
+
+[[diminished]]
+"7#11" = [ 0, 3, 6, 9,]
+
+[[diminished]]
+7b9 = [ 0, 3, 6, 9,]
+
+[[diminished]]
+"7#9" = [ 0, 3, 6, 9,]
+
+[[diminished]]
+m7 = [ 0, 3, 6, 9,]
+
+[[diminished]]
+m6 = [ 0, 3, 6, 9,]
+
+[[diminished]]
+m13 = [ 0, 3, 6, 9,]
+
+[[diminished]]
+dim = [ 0, 1, 3, 4, 6, 7, 9, 10,]
+
+[[diminished]]
+dim7 = [ 0, 3, 6, 9,]
+
+[[diminished]]
+m7b5 = [ 0, 3, 6, 9,]
+
+[[bebop_dominant]]
+add13 = [ 10,]
+
+[[bebop_dominant]]
+7 = [ 0,]
+
+[[bebop_dominant]]
+9 = [ 0,]
+
+[[bebop_dominant]]
+m7 = [ 7,]
+
+[[bebop_dominant]]
+m6 = [ 7,]
+
+[[bebop_dominant]]
+m13 = [ 7,]
+
+[[bebop_dominant]]
+dim = [ 4,]
+
+[[bebop_dominant]]
+dim7 = [ 4,]
+
+[[bebop_dominant]]
+m7b5 = [ 4,]
+
+[[bebop_dominant]]
+sus4 = [ 0, 5, 7,]
+
+[[bebop_dominant]]
+sus2 = [ 0, 5, 10,]
+
+[[bebop_dominant]]
+7sus4 = [ 0, 7,]
+
+[[bebop_dominant]]
+11 = [ 0,]
+
+[[bebop_dominant]]
+b9sus = [ 0, 5,]
+
+[[blues]]
+add13 = [ 3,]
+
+[[blues]]
+m7 = [ 0,]
+
+[[blues]]
+sus4 = [ 0, 5, 10,]
+
+[[blues]]
+sus2 = [ 3, 5, 10,]
+
+[[blues]]
+7sus4 = [ 0, 5,]
+
+[[blues]]
+11 = [ 5,]
+
+[[blues]]
+b9sus = [ 5, 10,]
+
+[[whole_tone]]
+"7#5" = [ 0, 2, 4, 6, 8, 10,]
+

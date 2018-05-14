@@ -11,6 +11,7 @@ def play_midi(fname):
     #         print(msg)
 
     port = mido.open_output()
+    print("the port",port)
     for msg in mid.play():
         port.send(msg)
 
