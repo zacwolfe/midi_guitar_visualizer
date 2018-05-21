@@ -11,9 +11,12 @@ def play_midi(fname):
     #         print(msg)
 
     port = mido.open_output()
+    port.panic()
 
     print("the port",port)
-    for msg in mid.play():
+    for msg in mid.play(meta_messages=True):
+        if msg.type == 'lyrics':
+            print(msg)
         port.send(msg)
 
 
@@ -23,7 +26,7 @@ def play_midi(fname):
 
 
 if __name__ == '__main__':
-    fname = '/Users/zacw/Documents/mma_songs/mma-songs-16.06/triste.mid'
+    fname = '/Users/zacw/Documents/tmp/fella2.mid'
 
     if len(sys.argv) > 1:
         fname = sys.argv[1]

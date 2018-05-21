@@ -1,6 +1,8 @@
 import constants
 from constants import current_time_millis
+from .tunings import to_midi,from_midi
 from kivy.uix.widget import Widget
+from kivy.uix.label import Label
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.config import ConfigParser, Config
@@ -56,6 +58,11 @@ def get_window_defaults():
         'height_ratio': .36,
     }
 
+def get_scale_defaults():
+    return {
+        'scale_system_file': '../scale_systems.toml',
+    }
+
 
 class Fretboard(RelativeLayout):
 
@@ -108,7 +115,7 @@ class Fretboard(RelativeLayout):
     # Config.set('graphics', 'top', 10)
 
     last_note = None
-    def __init__(self, tuning, **kwargs):
+    def __init__(self, tuning, scale_config, **kwargs):
         super(Fretboard, self).__init__(**kwargs)
 
         def get_color(key):
@@ -121,6 +128,7 @@ class Fretboard(RelativeLayout):
         self.nut_color = get_color('nut_color')
         self.finger_color = get_color('finger_color')
         self.tuning = tuning
+        self.scale_config = scale_config
         self.notes = {}
 
         with self.canvas:
@@ -457,8 +465,25 @@ class Fretboard(RelativeLayout):
         #
         # self.draw_string_activation(2)
 
-class Note(Widget):
+    def show_scale(self, scale_name, degree, key):
+        scale = self.scale_config.get_scale(scale_name)
+        if scale:
+            for string_num in range(0, self.tuning.get_num_strings()):
+                fret = self.get_fret_for_key(string_num, key)
+                for f in range(fret, 0, -1):
+                    pass
 
+    def get_fret_for_key(self, string_num, key):
+
+        open_pitch = self.tuning.get_string_sci_pitch(string_num)
+        self.tuning.get_next_pitch(open_pitch, key)
+        pitch = to_midi(open_pitch)
+        for fret in range(0, self.tuning.num_frets):
+            pass
+
+
+
+class Note(Widget):
     end_color = [0.1, 0.1, 1.0, 0.0]
     start_color = [0.8, 0.0, 0.0, 0.8]
     # fade_duration = 0.5
@@ -581,8 +606,50 @@ class Tracer(Widget):
         Animation.cancel_all(self.outer_color)
         self.color.rgba = self.start_color
 
+
+class ScaleNote(Widget):
+
+    pattern_color = [0.0, 0.1, 0.6, 0.3]
+    root_color = [0.0, 0.0, 0.0, 0.8]
+    third_color = [0.0, 0.0, 0.0, 0.5]
+    fifth_color = [0.0, 0.5, 0.5, 0.8]
+    seventh_color = [0.8, 0.7, 0.0, 0.8]
+
+    label = Label()
+
+
+    def __init__(self, fretboard, string_num, fret_num, **kwargs):
+        super(ScaleNote, self).__init__(**kwargs)
+        self.fretboard = fretboard
+        self.string_num = string_num
+        self.fret_num = fret_num
+        self.id = _generate_scale_note_id(string_num, fret_num)
+        with self.canvas:
+            self.color = Color(*self.start_color)
+            self.ellipse = Ellipse(pos=self.pos, size=self.size)
+
+        self.bind(pos=self.do_update)
+        self.bind(size=self.do_update)
+
+    def do_update(self, *args):
+        self.fretboard.update_note(self)
+        self.ellipse.pos = self.pos
+        self.ellipse.size = self.size
+        self.label.pos = self.pos
+
+    def hide(self):
+        self.color.a = 0.0
+
+    def show(self):
+        self.color.rgba = self.start_color
+
+
+
 def _generate_note_id(string_num, fret_num):
     return 'Note-{}.{}'.format(string_num, fret_num)
+
+def _generate_scale_note_id(string_num, fret_num):
+    return 'ScaleNote-{}.{}'.format(string_num, fret_num)
 
 def _generate_tracer_id(string_start, fret_start, string_end, fret_end):
     return 'Tracer-{}.{}.{}.{}'.format(string_start, fret_start, string_end, fret_end)
@@ -592,3 +659,4 @@ def _generate_string_id(string_num):
 
 def _dist_from_nut(scale, fret_num):
     return scale - (scale / (2 ** (float(fret_num) / 12.0)))
+

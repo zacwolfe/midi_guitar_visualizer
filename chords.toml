@@ -10,6 +10,8 @@ maj13=[0,2,4,5,7,9,11]
 add13=[0,4,7,9]
 '6/9'=[0,2,4,7,9,11]
 'M7#11'=[0,4,6,7,11]
+m=[0,3,7]   # your standard minor chord (e.g. Am)
+''=[0,4,7]  # your standard major chord (e.g. F)
 
 # dominant
 7=[0,4,7,10]

@@ -20,6 +20,12 @@ add13 = [ 0, 5, 7,]
 "M7#11" = [ 5,]
 
 [[major]]
+m = [ 2, 4, 9,]
+
+[[major]]
+"" = [ 0, 5, 7,]
+
+[[major]]
 7 = [ 7,]
 
 [[major]]
@@ -72,6 +78,12 @@ add13 = [ 8,]
 
 [[harmonic_minor]]
 "M7#11" = [ 8,]
+
+[[harmonic_minor]]
+m = [ 0, 5, 8,]
+
+[[harmonic_minor]]
+"" = [ 7, 8,]
 
 [[harmonic_minor]]
 7 = [ 7,]
@@ -128,6 +140,12 @@ maj9 = [ 8,]
 add13 = [ 3,]
 
 [[augmented]]
+m = [ 0,]
+
+[[augmented]]
+"" = [ 0, 3, 8,]
+
+[[augmented]]
 7 = [ 0,]
 
 [[augmented]]
@@ -150,6 +168,12 @@ sus2 = [ 8,]
 
 [[melodic_minor]]
 add13 = [ 5,]
+
+[[melodic_minor]]
+m = [ 0, 2,]
+
+[[melodic_minor]]
+"" = [ 5, 7,]
 
 [[melodic_minor]]
 7 = [ 5, 7,]
@@ -209,6 +233,12 @@ b9sus = [ 0, 7,]
 add13 = [ 0, 3, 6, 9,]
 
 [[diminished]]
+m = [ 0, 3, 6, 9,]
+
+[[diminished]]
+"" = [ 0, 3, 6, 9,]
+
+[[diminished]]
 7 = [ 0, 3, 6, 9,]
 
 [[diminished]]
@@ -243,6 +273,12 @@ m7b5 = [ 0, 3, 6, 9,]
 
 [[bebop_dominant]]
 add13 = [ 10,]
+
+[[bebop_dominant]]
+m = [ 7,]
+
+[[bebop_dominant]]
+"" = [ 0, 10,]
 
 [[bebop_dominant]]
 7 = [ 0,]
@@ -282,6 +318,12 @@ b9sus = [ 0, 5,]
 
 [[blues]]
 add13 = [ 3,]
+
+[[blues]]
+m = [ 0,]
+
+[[blues]]
+"" = [ 3,]
 
 [[blues]]
 m7 = [ 0,]

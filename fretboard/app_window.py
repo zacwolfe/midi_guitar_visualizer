@@ -5,6 +5,7 @@ from kivy.properties import ConfigParserProperty
 from .fretboard import Fretboard
 from .tunings import P4Tuning
 from .midi import Midi, NoteFilter
+from scales.scales import Scales
 from kivy.config import ConfigParser
 
 class AppWindow(RelativeLayout):
@@ -15,6 +16,7 @@ class AppWindow(RelativeLayout):
     initial_screen_loc_y = ConfigParserProperty(0, 'window', 'initial_screen_loc_y', 'app', val_type=int)
     midi_port = ConfigParserProperty(0, 'midi', 'midi_port', 'app')
 
+
     def __init__(self, **kwargs):
         super(AppWindow, self).__init__(**kwargs)
 
@@ -23,13 +25,16 @@ class AppWindow(RelativeLayout):
         if self.midi_port:
             self.midi_config = Midi(self.note_filter, self.midi_port, self.midi_message_received)
 
+        if self.scales_file:
+            self.scale_config = Scales(self.note_filter, self.midi_port, self.midi_message_received)
+
         with self.canvas:
             Window.size = (self.initial_width, self.initial_width * self.height_ratio)
             Window.left = self.initial_screen_loc_x
             Window.top = self.initial_screen_loc_y
             Window.clearcolor = (1, 1, 1, 1)
             self.rect = Rectangle(pos=self.pos, size=self.size, group='fb')
-            self.fretboard = Fretboard(tuning=self.tuning, pos_hint={'x':0, 'y':0}, size_hint=(1, 0.5))
+            self.fretboard = Fretboard(tuning=self.tuning, scales=self.scale_config, pos_hint={'x':0, 'y':0}, size_hint=(1, 0.5))
             self.add_widget(self.fretboard)
 
 
@@ -55,6 +60,9 @@ class AppWindow(RelativeLayout):
 
     def reload_midi(self):
         self.midi_config.set_default_port(self.midi_port, open_port=True)
+
+    def reload_scales(self):
+        self.scale_config.load_scales()
 
 
     def midi_message_received(self, midi_note, channel, on):

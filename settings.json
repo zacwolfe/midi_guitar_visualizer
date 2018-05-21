@@ -216,6 +216,13 @@
     "desc": "The thickness of the tracer line as a percentage of the window width (weird right?)",
     "section": "fretboard",
     "key": "tracer_line_ratio"
+  },
+  {
+    "type": "file",
+    "title": "Scale file",
+    "desc": "location of scale file",
+    "section": "scales",
+    "key": "scale_system_file"
   }
 
 ]

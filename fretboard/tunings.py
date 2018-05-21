@@ -3,7 +3,8 @@ import re
 # Semitones from C to C D E F G A B
 SEMITONES = [0, 2, 4, 5, 7, 9, 11]
 # Chromatic melodic scale
-CHROMATIC = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
+CHROMATIC = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
+NOTE_ACCIDENTAL_NORMALIZATION = {'C#':'Db','D#':'Eb', 'F#':'Gb', 'G#':'Ab', 'A#':'Bb'}
 
 LETTERS = 'CDEFGAB'
 REGEX = r'^([a-gA-G])(#{1,4}|b{1,4}|x{1,2}|)(\d*)$'
@@ -35,12 +36,78 @@ class Tuning(object):
         note = self.get_string_midi_note(channel)
         return midi_note < note or midi_note - note > self.num_frets
 
-
     def is_open_string(self, channel, midi_note):
         return self.get_string_midi_note(channel) == midi_note
 
     def get_distance(self, channel1, midi_note1, channel2, midi_note2):
         return abs(self.get_string_and_fret(midi_note1, channel1)[1] - self.get_string_and_fret(midi_note2, channel2)[1]) + abs(channel1 - channel2)
+
+    def get_string_frets(self, scale, string_num, key):
+
+        # get num octaves to cover all possible notes
+        num_octaves = int(math.ceil(self.num_frets / 12))
+        frets = list(scale) # make copy
+
+        # extend scale thru all octaves
+        for o in range(1, num_octaves):
+            for f in scale:
+                frets.append(f + o * 12)
+
+        # get open string root pitch
+        sci_pitch = self.get_string_sci_pitch(string_num)
+        m = p.match(sci_pitch)
+        if not m:
+            raise ValueError("Illegal pitch {}".format(sci_pitch))
+
+        # remove octave info
+        string_key = m.group(1) + m.group(2)
+
+        # normalize note identifiers
+        string_key = NOTE_ACCIDENTAL_NORMALIZATION.get(string_key, string_key)
+        key = NOTE_ACCIDENTAL_NORMALIZATION.get(key, key)
+
+        # get index of open string note in chromatic scale
+        key_idx = 0
+        for idx, val in enumerate(CHROMATIC):
+            if val == string_key:
+                key_idx = idx
+                break
+
+        # get fret offset from open string of scale key
+        offset = 0
+        for idx in range(0, 12):
+            if CHROMATIC[(idx + key_idx) % 12] == key:
+                offset = idx
+
+        # shift all notes up by offset
+        frets = [f+offset for f in frets]
+
+        # find notes to wrap around after shift
+        splice_idx = len(frets)
+        for i in range(len(frets), 0, -1):
+            if frets[i-1] < num_octaves * 12:
+                break
+            else:
+                splice_idx = i - 1
+
+        # print("das slice is {} and frets is {}".format(splice_idx, frets))
+        # prepend 'wrapped' notes to front
+        return [f % 12 for f in frets[splice_idx:]] + [f for f in frets if f <= self.num_frets]
+
+
+
+    def get_next_pitch(self, sci_pitch, key):
+        m = p.match(str)
+        if not m:
+            return None
+
+
+
+        pitch = NOTE_ACCIDENTAL_NORMALIZATION.get(sci_pitch, sci_pitch)
+
+
+        pass
+
 
 class StandardTuning(Tuning):
     pass
