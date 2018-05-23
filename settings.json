@@ -218,11 +218,18 @@
     "key": "tracer_line_ratio"
   },
   {
-    "type": "file",
+    "type": "path",
     "title": "Scale file",
     "desc": "location of scale file",
-    "section": "scales",
+    "section": "harmonic_definitions",
     "key": "scale_system_file"
+  },
+  {
+    "type": "path",
+    "title": "Chord file",
+    "desc": "location of chord file",
+    "section": "harmonic_definitions",
+    "key": "chords_file"
   }
 
 ]

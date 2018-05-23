@@ -4,7 +4,7 @@ kivy.require('1.10.0') # replace with your current kivy version !
 from kivy.app import App
 from kivy.clock import Clock
 
-from fretboard.fretboard import get_fretboard_adv_defaults, get_fretboard_defaults, get_window_defaults, get_scale_defaults
+from fretboard.fretboard import get_fretboard_adv_defaults, get_fretboard_defaults, get_window_defaults, get_harmonic_definitions_defaults
 from fretboard.app_window import AppWindow
 from fretboard.midi import Midi, NoteFilter, get_midi_defaults
 from dynamic_settings_item import SettingDynamicOptions
@@ -37,7 +37,7 @@ class FretboardNavigator(App):
         config.setdefaults('fretboard_adv', get_fretboard_adv_defaults())
         config.setdefaults('window', get_window_defaults())
         config.setdefaults('midi', get_midi_defaults())
-        config.setdefaults('scales', get_scale_defaults())
+        config.setdefaults('harmonic_definitions', get_harmonic_definitions_defaults())
 
 
     def build_settings(self, settings):
