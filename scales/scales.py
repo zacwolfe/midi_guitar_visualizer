@@ -32,6 +32,7 @@ class Scales(object):
             for s in self.scales.values():
                 s.sort()
 
+
         except IOError:
             box = BoxLayout(orientation="vertical")
 
@@ -61,7 +62,7 @@ def lookahead(chord, index):
 
     return chord[index + 1]
 
-
+# todo: make this a map
 def build_chord_labels(chord):
     labels = list(chord)
     degrees = list(chord)
@@ -130,6 +131,35 @@ def build_chord_labels(chord):
 
     return list(zip(chord, labels, degrees))
 
+# todo: make this a map
+def chord_label_to_interval(label):
+    if label == '1':
+        return 0
+    elif label == 'b9':
+        return 1
+    elif label == '9' or label == '2':
+        return 2
+    elif label == '#9' or label == 'm3':
+        return 3
+    elif label == '3':
+        return 4
+    elif label == '11' or label == '4':
+        return 5
+    elif label == '#11' or label == 'b5':
+        return 6
+    elif label == '5':
+        return 7
+    elif label == '#5' or label == 'b13':
+        return 8
+    elif label == '6' or label == '13':
+        return 9
+    elif label == '7':
+        return 10
+    elif label == 'M7':
+        return 11
+    else:
+        return -1
+
 CHORD_REGEX = r'^([a-gA-G])(b|#)?([a-zA-Z0-9#]*)$'
 chord_pattern = re.compile(CHORD_REGEX)
 
@@ -161,4 +191,48 @@ class Chords(object):
     def get_chord(self, name):
         return self.chords.get(name)
 
+class Patterns(object):
 
+    def __init__(self, **kwargs):
+        super(Patterns, self).__init__(**kwargs)
+        self.load_patterns()
+
+    def load_patterns(self):
+        patterns_file = ConfigParser.get_configparser('app').get('harmonic_definitions', 'patterns_file')
+        p = toml.load(patterns_file)
+
+        self.patterns = p.get('patterns')
+
+
+    def get_default_arppeggio_patterns(self, tuning_name='default', chord_type='default'):
+        try:
+            return self._get_default_arppeggio_pattern(tuning_name, chord_type)
+        except KeyError:
+            try:
+                return self._get_default_arppeggio_pattern(tuning_name, 'default')
+            except KeyError:
+                try:
+                    return self._get_default_arppeggio_pattern('default', chord_type)
+                except KeyError:
+                        return self._get_default_arppeggio_pattern('default', 'default')
+
+    def _get_default_arppeggio_pattern(self, tuning_name, chord_type):
+        mapping = self.patterns[tuning_name]['arpeggios'][chord_type]
+        return [mapping['pos1'], mapping['pos2'], mapping['pos3']]
+
+
+    def get_default_scale_patterns(self, tuning_name='default', scale_name='default'):
+        try:
+            return self._get_default_scale_pattern(tuning_name, scale_name)
+        except KeyError:
+            try:
+                return self._get_default_scale_pattern(tuning_name, 'default')
+            except KeyError:
+                try:
+                    return self._get_default_scale_pattern('default', scale_name)
+                except KeyError:
+                    return self._get_default_scale_pattern('default', 'default')
+
+    def _get_default_scale_pattern(self, tuning_name, scale_name):
+        mapping = self.patterns[tuning_name]['scales'][scale_name]
+        return [mapping['pos1'], mapping['pos2'], mapping['pos3']]

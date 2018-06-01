@@ -1,5 +1,7 @@
 import math
 import re
+from statistics import mean
+from scales.scales import chord_label_to_interval
 # Semitones from C to C D E F G A B
 SEMITONES = [0, 2, 4, 5, 7, 9, 11]
 # Chromatic melodic scale
@@ -16,6 +18,9 @@ class Tuning(object):
         self.num_frets = num_frets
         self.num_strings = 6
         self.tuning = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2']
+
+    def get_name(self):
+        return None
 
     def get_num_strings(self):
         return self.num_strings
@@ -61,14 +66,14 @@ class Tuning(object):
                 shift_down = scale[scale_degree]
                 scale = [d - shift_down for d in scale[scale_degree:]] + [d + 12 - shift_down for d in scale[0:scale_degree]]
 
-            scale_mapping_template = list(scale) # make copy
+            scale_mapping_template = list(zip(scale, scale)) # make copy
 
             # extend scale thru all octaves
             for o in range(1, num_octaves):
                 for f in scale:
-                    scale_mapping_template.append(f + o * 12)
+                    scale_mapping_template.append((f + o * 12, f))
         else:
-            scale_mapping_template = dict()
+            scale_mapping_template = list()
 
         # normalize scale_key
         scale_key = NOTE_ACCIDENTAL_NORMALIZATION.get(scale_key, scale_key)
@@ -129,44 +134,44 @@ class Tuning(object):
                         scale_offset = idx
 
                 # shift all notes up by scale_offset
-                scale_mapping = [f+scale_offset for f in scale_mapping]
+                scale_mapping = [(f[0]+scale_offset,f[1]) for f in scale_mapping]
 
                 # find notes to wrap around after shift
                 splice_idx = len(scale_mapping)
                 for i in range(len(scale_mapping), 0, -1):
-                    if scale_mapping[i-1] < num_octaves * 12:
+                    if scale_mapping[i-1][0] < num_octaves * 12:
                         break
                     else:
                         splice_idx = i - 1
 
                 # print("das slice is {} and frets is {}".format(splice_idx, frets))
                 # prepend 'wrapped' notes to front
-                scale_mapping = [f % 12 for f in scale_mapping[splice_idx:]] + [f for f in scale_mapping if f <= self.num_frets]
-
+                scale_mapping = [(f[0] % 12, f[1]) for f in scale_mapping[splice_idx:]] + [f for f in scale_mapping if f[0] <= self.num_frets]
+                # print("my scale_mapping is {}".format(scale_mapping))
                 combined_mapping = list()
 
                 curr_chord_idx = 0
-                for sd in scale_mapping:
+                for sf, sd in scale_mapping:
 
                     found = False
                     for i in range(curr_chord_idx, len(chord_mappings)):
-                        if chord_mappings[i][0] > sd:
+                        if chord_mappings[i][0] > sf:
                             break
                         else:
-                            combined_mapping.append(chord_mappings[i])
+                            combined_mapping.append((chord_mappings[i][0],chord_mappings[i][1], chord_mappings[i][2], sd))
                             curr_chord_idx = i
-                            if chord_mappings[i][0] == sd:
+                            if chord_mappings[i][0] == sf:
                                 found = True
                                 break
 
                     if not found:
-                        combined_mapping.append((sd, None, None))
+                        combined_mapping.append((sf, None, None, sd))
                     else:
                         curr_chord_idx += 1
 
                 # pick up any remaining chord mappings
                 for i in range(curr_chord_idx, len(chord_mappings)):
-                    combined_mapping.append(chord_mappings[i])
+                    combined_mapping.append((chord_mappings[i][0], chord_mappings[i][1], chord_mappings[i][2], None))
 
                 chord_mappings = combined_mapping
 
@@ -174,14 +179,147 @@ class Tuning(object):
 
         return mapping
 
+    def get_pattern(self, pattern_mapping, pattern_config, last_notes, chord_type='default', scale_type='default'):
+        pass
+
+
+
 
 class StandardTuning(Tuning):
-    pass
+
+    def get_name(self):
+        return 'standard'
 
 class P4Tuning(Tuning):
     def __init__(self, num_frets):
         super().__init__(num_frets)
         self.tuning = ['F4', 'C4', 'G3', 'D3', 'A2', 'E2']
+
+    def get_name(self):
+        return 'p4'
+
+    def get_pattern(self, pattern_mapping, pattern_config, last_notes, chord_type='default', scale_type='default'):
+        avg_fret = get_average_fret(last_notes)
+
+        matches = list()
+        for note_tuple in last_notes:
+            string_frets = pattern_mapping[note_tuple[0]]
+            added = False
+            for sf in string_frets:
+                if sf[0] == note_tuple[1]:
+                    matches.append((note_tuple[0], note_tuple[1], True, sf[1], sf[3]))
+                    added = True
+                elif sf[0] > note_tuple[1]:
+                    break
+            if not added:
+                matches.append((note_tuple[0], note_tuple[1], False, None, None))
+
+        # if the last note doesn't match or if no matches exist return None
+        if not [m for m in matches if m[2]] or not matches[-1:][0][2]:
+            return None
+
+        arp_mode = True if len([n for n in matches if n[3]]) == len(matches) else False
+
+        string_num, fret_pos = self.get_probable_pos(matches)
+
+        if arp_mode:
+            roots = self.get_chord_roots(string_num, fret_pos, pattern_mapping, matches[len(matches) - 1])
+            chord_patterns = pattern_config.get_default_arppeggio_patterns(self.get_name(), chord_type)
+            print("got chord patterns {}".format(chord_patterns))
+            patterns = self.get_patterns(chord_patterns, pattern_mapping, roots)
+            print("got candidate patterns {}".format(patterns))
+            pattern = self.choose_best_pattern(patterns, fret_pos, matches)
+            mapping = self.extend_pattern(pattern)
+        else:
+            roots = self.get_scale_roots(string_num, fret_pos, pattern_mapping, matches[len(matches) - 1])
+
+        print("got roots {}".format(roots))
+
+
+    def get_probable_pos(self, matches):
+
+        curr_pos = -1
+
+        for m in matches:
+            fret = m[1]
+            if curr_pos < 0:
+                curr_pos = fret
+            elif fret - curr_pos > 4:
+                curr_pos = fret - 4
+            elif fret < curr_pos:
+                curr_pos = fret
+
+        return (matches[len(matches) - 1][0], curr_pos)
+
+
+    def get_chord_roots(self, string_num, fret_pos, pattern_mapping, last_match):
+        # string_mapping = pattern_mapping[string_num]
+        chord_degree = chord_label_to_interval(last_match[3])
+
+        lower_root = None
+        curr_fret = last_match[1]
+        current_string = last_match[0]
+
+        curr_root_fret = curr_fret - chord_degree
+
+        lower_roots = list()
+        while True:
+
+            if curr_root_fret >= fret_pos - 1 and curr_root_fret <= fret_pos + 4:
+                lower_roots.append((current_string, curr_root_fret))
+            elif curr_root_fret - fret_pos > 4:
+                break
+
+            current_string += 1
+            curr_root_fret += 5
+
+        curr_root_fret = curr_fret + (12 - chord_degree)
+        current_string = last_match[0]
+        upper_roots = list()
+        while True:
+
+            if curr_root_fret >= fret_pos - 1 and curr_root_fret <= fret_pos + 4:
+                upper_roots.append((current_string, curr_root_fret))
+            elif curr_root_fret < fret_pos - 1:
+                break
+
+            current_string -= 1
+            curr_root_fret -= 5
+
+        return [lower_roots, upper_roots]
+
+    def get_patterns(self, chord_patterns, pattern_mapping, roots):
+        patterns = list()
+        for string_num, fret_num in roots[0]:
+            for pattern in chord_patterns:
+                current_pattern = [(string_num, fret_num)]
+                current_string = string_num
+                for relative_string, chord_tone in pattern:
+                    snum = current_string+relative_string
+                    if snum >= self.num_strings or snum < 0:
+                        break
+                    string_mapping = pattern_mapping[snum]
+                    for n in string_mapping:
+                        if n[2] == chord_tone:
+                            current_pattern.append((snum, n[0]))
+                            break
+                        elif n[2] and n[2] > chord_tone and n[0] > fret_num:
+                            break
+
+                patterns.append(current_pattern)
+
+
+
+
+
+    def get_scale_roots(self, string_num, fret_pos, pattern_mapping, last_match):
+        pass
+
+    def choose_best_pattern(self, patterns, fret_pos, matches):
+        pass
+
+    def extend_pattern(self, pattern):
+        pass
 
 def from_midi(midi):
   name = CHROMATIC[midi % 12]
@@ -206,4 +344,5 @@ def parse_pitch(str):
     oct = int(m.group(3)) if len(m.groups()) >= 3 else None
     return (step, alt, oct)
 
-
+def get_average_fret(string_fret_tuples):
+    return mean([f[1] for f in string_fret_tuples])

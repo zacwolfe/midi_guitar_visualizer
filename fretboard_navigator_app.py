@@ -25,7 +25,9 @@ class FretboardNavigator(App):
             Clock.schedule_once(lambda dt:my_callback2(), 3 )
 
         def my_callback2():
-            app_window.fretboard.remove_some_stuff()
+            # app_window.fretboard.remove_some_stuff()
+            app_window.fretboard.add_some_more_stuff()
+            # Clock.schedule_once(lambda dt: my_callback2(), 3)
 
         Clock.schedule_once(lambda dt: my_callback(), 3)
 

@@ -230,6 +230,13 @@
     "desc": "location of chord file",
     "section": "harmonic_definitions",
     "key": "chords_file"
+  },
+  {
+    "type": "path",
+    "title": "Pattern file",
+    "desc": "location of pattern file",
+    "section": "harmonic_definitions",
+    "key": "patterns_file"
   }
 
 ]
