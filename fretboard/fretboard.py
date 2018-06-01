@@ -485,9 +485,11 @@ class Fretboard(RelativeLayout):
         print("we got mappingz of mapping {}".format(json.dumps(mappings, indent=2)))
 
         visible_notes = set()
+
         for string_num, frets in mappings.items():
             for mapping in frets:
-                visible_notes.add(self.add_tone_marker(string_num, mapping[0], mapping[1], mapping[2]))
+                if mapping:
+                    visible_notes.add(self.add_tone_marker(string_num, mapping[0], mapping[1], mapping[2]))
 
         # hide non-visible notes
         for note_id, note in self.scale_notes.items():

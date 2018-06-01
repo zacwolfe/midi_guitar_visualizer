@@ -28,8 +28,8 @@ class Tuning(object):
     def get_string_sci_pitch(self, string_num):
         return self.tuning[string_num]
 
-    def get_string_midi_note(self, string_num):
-        return to_midi(self.get_string_sci_pitch(string_num))
+    def get_string_midi_note(self, string_num, fret_num=None):
+        return to_midi(self.get_string_sci_pitch(string_num)) + fret_num if fret_num else 0
 
     # assumes midi channel == string number
     def get_string_and_fret(self, midi_note, channel):
@@ -175,6 +175,12 @@ class Tuning(object):
 
                 chord_mappings = combined_mapping
 
+            # fill up all the empty frets for quick index-based access
+            # sparse_array = [None] * (self.num_frets + 1)
+            # for m in chord_mappings:
+            #     sparse_array[m[0]] = m
+            #
+            # mapping[string_num] = sparse_array
             mapping[string_num] = chord_mappings
 
         return mapping
@@ -206,9 +212,12 @@ class P4Tuning(Tuning):
             string_frets = pattern_mapping[note_tuple[0]]
             added = False
             for sf in string_frets:
+                if not sf:
+                    continue
                 if sf[0] == note_tuple[1]:
                     matches.append((note_tuple[0], note_tuple[1], True, sf[1], sf[3]))
                     added = True
+
                 elif sf[0] > note_tuple[1]:
                     break
             if not added:
@@ -224,16 +233,19 @@ class P4Tuning(Tuning):
 
         if arp_mode:
             roots = self.get_chord_roots(string_num, fret_pos, pattern_mapping, matches[len(matches) - 1])
+            print("got roots {}".format(roots))
             chord_patterns = pattern_config.get_default_arppeggio_patterns(self.get_name(), chord_type)
             print("got chord patterns {}".format(chord_patterns))
             patterns = self.get_patterns(chord_patterns, pattern_mapping, roots)
             print("got candidate patterns {}".format(patterns))
+            print("got matches {}".format(matches))
             pattern = self.choose_best_pattern(patterns, fret_pos, matches)
+            print("Got best pattern {}".format(pattern))
             mapping = self.extend_pattern(pattern)
         else:
             roots = self.get_scale_roots(string_num, fret_pos, pattern_mapping, matches[len(matches) - 1])
 
-        print("got roots {}".format(roots))
+
 
 
     def get_probable_pos(self, matches):
@@ -291,35 +303,74 @@ class P4Tuning(Tuning):
     def get_patterns(self, chord_patterns, pattern_mapping, roots):
         patterns = list()
         for string_num, fret_num in roots[0]:
+            root_patterns = list()
             for pattern in chord_patterns:
-                current_pattern = [(string_num, fret_num)]
-                current_string = string_num
+                current_pattern = list()
+                last_string = string_num
+                last_fret = fret_num
                 for relative_string, chord_tone in pattern:
-                    snum = current_string+relative_string
+                    snum = string_num+relative_string
                     if snum >= self.num_strings or snum < 0:
                         break
                     string_mapping = pattern_mapping[snum]
+
                     for n in string_mapping:
-                        if n[2] == chord_tone:
-                            current_pattern.append((snum, n[0]))
+                        if not n:
+                            continue
+                        elif self.get_string_midi_note(last_string, last_fret) > self.get_string_midi_note(snum, n[0]):
+                            continue
+                        elif n[2] == chord_tone:
+                            current_pattern.append((snum, n))
+                            last_fret = n[0]
+                            last_string = snum
                             break
-                        elif n[2] and n[2] > chord_tone and n[0] > fret_num:
-                            break
+                        # elif n[2] and n[2] > chord_tone:
+                        #     break
 
-                patterns.append(current_pattern)
-
-
+                root_patterns.append(current_pattern)
+            patterns.append(((string_num, fret_num), root_patterns))
+        return patterns
 
 
 
     def get_scale_roots(self, string_num, fret_pos, pattern_mapping, last_match):
         pass
 
-    def choose_best_pattern(self, patterns, fret_pos, matches):
-        pass
+    def choose_best_pattern(self, root_patterns, fret_pos, matches):
+        results = list()
+
+        for root, patterns in root_patterns:
+            print("For root {}".format(root))
+
+            for position, pattern in enumerate(patterns):
+                num_matches = 0
+                total_frets = 0
+
+                print("pos #{}: {}".format(position + 1, pattern))
+                for n in pattern:
+                    total_frets += n[1][0]
+                    if is_match(n, matches):
+                        num_matches += 1
+
+                results.append((num_matches, total_frets/len(pattern), position, pattern))
+
+
+        results.sort(key = lambda n: (-n[0],abs(fret_pos - n[1])))
+        # results.sort(key = lambda n: abs(fret_pos - n[1]))
+
+        print("Fugging results for fret_pos {} are {}".format(fret_pos, results))
+
+        return results[0][2], results[0][3] if results else None
 
     def extend_pattern(self, pattern):
         pass
+
+def is_match(n, matches):
+    for m in matches:
+        if n[0] == m[0] and n[1][0] == m[1]:
+            return True
+
+    return False
 
 def from_midi(midi):
   name = CHROMATIC[midi % 12]
