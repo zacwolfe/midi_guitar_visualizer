@@ -18,6 +18,7 @@ class Tuning(object):
         self.num_frets = num_frets
         self.num_strings = 6
         self.tuning = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2']
+        self.extended_tuning = ['D5', 'A4', 'E4', 'B3', 'G3', 'D3', 'A2', 'E2', 'B1', 'F1']
 
     def get_name(self):
         return None
@@ -26,7 +27,7 @@ class Tuning(object):
         return self.num_strings
 
     def get_string_sci_pitch(self, string_num):
-        return self.tuning[string_num]
+        return self.extended_tuning[string_num + 2]
 
     def get_string_midi_note(self, string_num, fret_num=None):
         return to_midi(self.get_string_sci_pitch(string_num)) + fret_num if fret_num else 0
@@ -49,8 +50,8 @@ class Tuning(object):
 
     def get_fret_mapping(self, chord_key, chord_def, scale=None, scale_key=None, scale_degree=0):
 
-        # get num octaves to cover all possible notes
-        num_octaves = int(math.ceil(self.num_frets / 12))
+        # get num octaves to cover all possible notes and patterns
+        num_octaves = int(math.ceil(self.num_frets / 12)) + 1
 
         chord_mappings_template = list(chord_def)
         # extend scale thru all octaves
@@ -80,7 +81,7 @@ class Tuning(object):
 
         mapping = dict()
 
-        for string_num in range(0, self.num_strings):
+        for string_num in range(-2, self.num_strings + 2):
             scale_mapping = list(scale_mapping_template)
             chord_mappings = list(chord_mappings_template)
             # get open string root pitch
@@ -200,6 +201,7 @@ class P4Tuning(Tuning):
     def __init__(self, num_frets):
         super().__init__(num_frets)
         self.tuning = ['F4', 'C4', 'G3', 'D3', 'A2', 'E2']
+        self.extended_tuning = ['Eb5', 'Bb4', 'F4', 'C4', 'G3', 'D3', 'A2', 'E2', 'B1', 'F1']
 
     def get_name(self):
         return 'p4'
@@ -231,19 +233,24 @@ class P4Tuning(Tuning):
 
         string_num, fret_pos = self.get_probable_pos(matches)
 
+        mapping = None
         if arp_mode:
             roots = self.get_chord_roots(string_num, fret_pos, pattern_mapping, matches[len(matches) - 1])
-            print("got roots {}".format(roots))
+            # print("got roots {}".format(roots))
             chord_patterns = pattern_config.get_default_arppeggio_patterns(self.get_name(), chord_type)
-            print("got chord patterns {}".format(chord_patterns))
+            # print("got chord patterns {}".format(chord_patterns))
             patterns = self.get_patterns(chord_patterns, pattern_mapping, roots)
-            print("got candidate patterns {}".format(patterns))
-            print("got matches {}".format(matches))
+            # print("got candidate patterns {}".format(patterns))
+            # print("got matches {}".format(matches))
             pattern = self.choose_best_pattern(patterns, fret_pos, matches)
-            print("Got best pattern {}".format(pattern))
-            mapping = self.extend_pattern(pattern)
+            # print("Got best pattern {}".format(pattern))
+            if pattern:
+                mapping = self.extend_pattern(pattern, chord_patterns, pattern_mapping)
+
         else:
             roots = self.get_scale_roots(string_num, fret_pos, pattern_mapping, matches[len(matches) - 1])
+
+        return mapping
 
 
 
@@ -310,7 +317,7 @@ class P4Tuning(Tuning):
                 last_fret = fret_num
                 for relative_string, chord_tone in pattern:
                     snum = string_num+relative_string
-                    if snum >= self.num_strings or snum < 0:
+                    if snum >= self.num_strings + 2 or snum < -2:
                         break
                     string_mapping = pattern_mapping[snum]
 
@@ -328,10 +335,18 @@ class P4Tuning(Tuning):
                         #     break
 
                 root_patterns.append(current_pattern)
+                # print("the root_patt is {}".format(current_pattern))
+
             patterns.append(((string_num, fret_num), root_patterns))
         return patterns
 
-
+    def get_string_midi_note_ext(self, string_num, fret_num):
+        if string_num < self.num_strings and string_num > 0:
+            return self.get_string_midi_note(string_num, fret_num)
+        elif string_num < 0:
+            return self.get_string_midi_note(0, fret_num) + abs(string_num)*5
+        else:
+            return self.get_string_midi_note(0, fret_num) - (string_num - self.num_strings + 1)*5
 
     def get_scale_roots(self, string_num, fret_pos, pattern_mapping, last_match):
         pass
@@ -340,13 +355,13 @@ class P4Tuning(Tuning):
         results = list()
 
         for root, patterns in root_patterns:
-            print("For root {}".format(root))
+            # print("For root {}".format(root))
 
             for position, pattern in enumerate(patterns):
                 num_matches = 0
                 total_frets = 0
 
-                print("pos #{}: {}".format(position + 1, pattern))
+                # print("pos #{}: {}".format(position + 1, pattern))
                 for n in pattern:
                     total_frets += n[1][0]
                     if is_match(n, matches):
@@ -354,16 +369,135 @@ class P4Tuning(Tuning):
 
                 results.append((num_matches, total_frets/len(pattern), position, pattern))
 
+        results.sort(key = lambda n: (-n[0], abs(fret_pos - n[1])))
 
-        results.sort(key = lambda n: (-n[0],abs(fret_pos - n[1])))
-        # results.sort(key = lambda n: abs(fret_pos - n[1]))
-
-        print("Fugging results for fret_pos {} are {}".format(fret_pos, results))
+        # print("Fugging results for fret_pos {} are {}".format(fret_pos, results))
 
         return results[0][2], results[0][3] if results else None
 
-    def extend_pattern(self, pattern):
-        pass
+
+    def extend_pattern(self, chosen_pattern, pattern_template, pattern_mapping):
+        result = self.extend_down(chosen_pattern, pattern_template, pattern_mapping)
+        # print("extended down we have {}".format(result))
+        up = self.extend_up(chosen_pattern, pattern_template, pattern_mapping)
+        # print("extended up we have {}".format(up))
+        return result + [chosen_pattern] + up
+
+    def extend_down(self, chosen_pattern, pattern_template, pattern_mapping):
+
+        curr_position = chosen_pattern[0]
+        start = chosen_pattern[1][0]
+        s = (start[0], start[1][0])
+
+        result = list()
+
+        complete = False
+        while not complete:
+
+            curr_position = 2 if curr_position == 0 else curr_position - 1
+
+            current_pattern = pattern_template[curr_position]
+            current_pattern = list(reversed(current_pattern))
+            offset = current_pattern[0][0]
+            current_pattern = [[p[0] - offset, p[1]] for p in current_pattern]
+            current_pattern.pop(0)  # remove root
+
+            last_string = s[0]
+            last_fret = s[1]
+            # print('current pos {} and pattern {} and start {} and s {}'.format(curr_position, current_pattern, start, s))
+
+            if last_string >= self.num_strings:
+                complete = True
+                continue
+
+            pattern_result = list()
+            for n in current_pattern:
+                string_num = s[0] + n[0]
+                if string_num >= self.num_strings:
+                    complete = True
+                    break
+                string_mapping = pattern_mapping[string_num]
+                if string_num != last_string:
+                    last_fret = last_fret + 4
+                    last_string = string_num
+                sm = None
+                for m in string_mapping:
+                    if m[0] > last_fret:
+                        break
+                    if m[2] == n[1]:
+                        sm = m
+                        last_fret = sm[0]
+
+                if sm:
+                    # pattern_result.append((string_num, (sm[0], sm[1], sm[2], sm[3])))
+                    pattern_result[0:0] = [(string_num, (sm[0], sm[1], sm[2], sm[3]))]
+
+            if pattern_result:
+                pattern_result = (curr_position, pattern_result)
+                # print("got pattern_result {}".format(pattern_result))
+                result[0:0] = [pattern_result]
+
+            s = (last_string, last_fret)
+
+        return result
+
+    def extend_up(self, chosen_pattern, pattern_template, pattern_mapping):
+        curr_position = chosen_pattern[0]
+        start = chosen_pattern[1][-1]
+        s = (start[0], start[1][0])
+
+        result = list()
+
+        complete = False
+        while not complete:
+
+            curr_position = 0 if curr_position == 2 else curr_position + 1
+
+            current_pattern = pattern_template[curr_position]
+            # current_pattern = list(reversed(current_pattern))
+            # offset = current_pattern[0][0]
+            # current_pattern = [[p[0] - offset, p[1]] for p in current_pattern]
+            current_pattern.pop(0)  # remove last root
+
+            last_string = s[0]
+            last_fret = s[1]
+            # print('current pos {} and pattern {} and start {} and s {}'.format(curr_position, current_pattern, start, s))
+
+            if last_string < 0:
+                complete = True
+                continue
+
+            pattern_result = list()
+            for n in current_pattern:
+                string_num = s[0] + n[0]
+                if string_num < 0:
+                    complete = True
+                    break
+                string_mapping = pattern_mapping[string_num]
+                if string_num != last_string:
+                    last_fret = max(0, last_fret - 4)
+                    last_string = string_num
+                sm = None
+                for m in string_mapping:
+                    if m[0] < last_fret:
+                        continue
+                    elif m[2] == n[1]:
+                        sm = m
+                        last_fret = sm[0]
+                        break
+
+                if sm:
+                    pattern_result.append((string_num, (sm[0], sm[1], sm[2], sm[3])))
+
+            if pattern_result:
+                pattern_result = (curr_position, pattern_result)
+                # print("got ascending pattern_result {}".format(pattern_result))
+                result.append(pattern_result)
+
+            s = (last_string, last_fret)
+
+        return result
+
 
 def is_match(n, matches):
     for m in matches:

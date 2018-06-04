@@ -3,6 +3,7 @@ from scales.scales import Scales, Chords, Patterns, chord_label_to_interval, par
 from fretboard.tunings import StandardTuning, Tuning, P4Tuning
 from fretboard.fretboard import get_fretboard_adv_defaults, get_fretboard_defaults, get_window_defaults, get_harmonic_definitions_defaults
 import json
+from time import time
 from kivy.config import ConfigParser
 
 class P4TuningTest(unittest.TestCase):
@@ -23,6 +24,8 @@ class P4TuningTest(unittest.TestCase):
         pass
 
     def test_pattern(self):
+
+        start = time()
         chord = 'GM7'
         scale_name = 'major'
         scale_key = 'G'
@@ -45,8 +48,14 @@ class P4TuningTest(unittest.TestCase):
 
         mappings = self.tuning.get_fret_mapping(chord_tone, chord_spec, scale, scale_key, scale_degree)
         print("we got mappingz of mapping {}".format(json.dumps(mappings)))
-        last_3_notes = ((3, 9), (2, 7), (1, 6))
-        self.tuning.get_pattern(mappings, self.pattern_config, last_3_notes, chord_type)
+        # last_3_notes = ((3, 9), (2, 7), (1, 6))
+        # self.tuning.get_pattern(mappings, self.pattern_config, last_3_notes, chord_type)
+
+        # last_3_notes = ((0, 6), (0, 9))
+        last_3_notes = ((3, 5), (3, 9), (2, 7))
+        mapping = self.tuning.get_pattern(mappings, self.pattern_config, last_3_notes, chord_type)
+        end = time()
+        print("We got the great pattern {}\n in {} millis".format(mapping, int(end*1000 - start*1000)))
 
 
     def test_probable_pos(self):

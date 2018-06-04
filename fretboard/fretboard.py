@@ -287,7 +287,6 @@ class Fretboard(RelativeLayout):
 
 
     def get_finger_location(self, string_num, fret_num):
-
         fret_x = self.get_fret_x(fret_num)
         prev_fret_x = self.get_fret_x(fret_num - 1)
 
@@ -436,7 +435,8 @@ class Fretboard(RelativeLayout):
 
 
     def add_some_stuff(self):
-        self.show_chord_tones('G7b9b13', 'melodic_minor', 6, 'G')
+        self.show_chord_tones('GM7', 'major', 0, 'G')
+        # self.show_chord_tones('G7b9b13', 'melodic_minor', 6, 'G')
         # self.note_on(0, 1)
         # self.note_on(1, 11)
         # self.note_on(2, 12)
@@ -448,7 +448,37 @@ class Fretboard(RelativeLayout):
         pass
 
     def add_some_more_stuff(self):
-        self.show_chord_tones('GM7', 'major', 0, 'G')
+        chord = 'GM7'
+        scale_name = 'major'
+        scale_key = 'G'
+        scale_degree = 0
+
+        m = parse_chord(chord)
+        if not m:
+            return
+
+        chord_tone = m[1]
+        if m[2]:
+            chord_tone += m[2]
+        chord_type = m[3]
+        chord_spec = self.chord_config.get_chord(chord_type)
+        if not chord_spec:
+            raise ValueError("Chord type {} not found".format(chord_type))
+        scale = None
+        if scale_name:
+            scale = self.scale_config.get_scale(scale_name)
+
+        mappings = self.tuning.get_fret_mapping(chord_tone, chord_spec, scale, scale_key, scale_degree)
+        print("we got mappingz of mapping {}".format(json.dumps(mappings)))
+        # last_3_notes = ((3, 9), (2, 7), (1, 6))
+        # self.tuning.get_pattern(mappings, self.pattern_config, last_3_notes, chord_type)
+
+        # last_3_notes = ((0, 6), (0, 9))
+        last_3_notes = ((3, 5), (3, 9), (2, 7))
+        mapping = self.tuning.get_pattern(mappings, self.pattern_config, last_3_notes, chord_type)
+        print("We got the grand pattern {}".format(mapping))
+        self.show_pattern(mapping)
+        # self.show_chord_tones('GM7', 'major', 0, 'G')
         # self.show_chord_tones('Am7', 'major', 1, 'A')
 
     def remove_some_stuff(self):
@@ -463,6 +493,12 @@ class Fretboard(RelativeLayout):
         # self.draw_finger_location(22, 4)
         #
         # self.draw_string_activation(2)
+
+    def show_pattern(self, pattern):
+        for p in pattern:
+            seq = p[1]
+            for n in seq:
+                self.highlight_tone_marker(n[0], n[1][0])
 
 
     def show_chord_tones(self, chord, scale_name=None, scale_degree=None, scale_key=None):
@@ -487,6 +523,8 @@ class Fretboard(RelativeLayout):
         visible_notes = set()
 
         for string_num, frets in mappings.items():
+            if string_num >= self.tuning.num_strings or string_num < 0:
+                continue
             for mapping in frets:
                 if mapping:
                     visible_notes.add(self.add_tone_marker(string_num, mapping[0], mapping[1], mapping[2]))
@@ -513,6 +551,16 @@ class Fretboard(RelativeLayout):
             note = ScaleNote(self, string_num, fret_num, chord_label, chord_degree, pos_hint=pos_hint, size_hint=size_hint)
             self.scale_notes[note_id] = note
             self.add_widget(note)
+        return note_id
+
+    def highlight_tone_marker(self, string_num, fret_num):
+        note_id = _generate_scale_note_id(string_num, fret_num)
+
+        note = self.scale_notes.get(note_id)
+        if note:
+            note.highlight()
+            note.show()
+
         return note_id
 
 
@@ -650,6 +698,9 @@ class ScaleNote(Widget):
     fifth_color = [0.0, 0.5, 0.5, 0.8]
     thirteenth_color = [0.7, 0.5, 0.0, 0.5]
     seventh_color = [0.8, 0.7, 0.0, 0.6]
+    highlight_color = [1.0, 0.0, 0.0, 0.0]
+
+    highlight_color_inst = None
 
     degree_colors = {0: pattern_color,
                      1: root_color,
@@ -678,6 +729,8 @@ class ScaleNote(Widget):
         with self.canvas:
             self.color = Color(*self.degree_colors[self.scale_degree])
             self.ellipse = Ellipse(pos=self.pos, size=self.size)
+            self.highlight_color_inst = Color(*self.highlight_color)
+            self.centered_circle = Line(circle=(self.center_x, self.center_y, 50), width=2)
 
         self.label = Label()
         self.label.halign = 'center'
@@ -686,6 +739,8 @@ class ScaleNote(Widget):
         self.label.size = self.size
         if scale_label:
             self.label.text = scale_label
+
+        self.highlighted = False
 
         self.add_widget(self.label)
         self.bind(pos=self.do_update)
@@ -710,14 +765,31 @@ class ScaleNote(Widget):
         self.ellipse.size = self.size
         self.label.pos = self.pos
         self.label.size = self.size
+        if self.highlighted:
+            with self.canvas:
+            # self.color.rgba = self.highlight_color
+                self.highlight_color_inst.a = 0.8
+                # Color(*self.highlight_color)
+                self.centered_circle.circle =  (self.center_x, self.center_y, (self.width + 10)/2)
 
     def hide(self):
         self.color.a = 0.0
         self.label.text = ''
+        self.highlighted = False
+        self.highlight_color_inst.a = 0.0
 
     def show(self):
         self.color.rgba = self.degree_colors[self.scale_degree]
         self.label.text = self.scale_label if self.scale_label is not None else ''
+        if self.highlighted:
+            # self.color.rgba = self.highlight_color
+            with self.canvas:
+                # Color(*self.highlight_color)
+                self.highlight_color_inst.a = 0.8
+                self.centered_circle.circle =  (self.center_x, self.center_y, (self.width + 15)/2)
+
+    def highlight(self):
+        self.highlighted = True
 
 
 def _generate_note_id(string_num, fret_num):
