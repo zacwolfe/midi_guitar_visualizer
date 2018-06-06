@@ -73,7 +73,7 @@ class Midi(object):
 
 
 class NoteFilter(object):
-    note_queue = collections.deque(maxlen=4)
+    note_queue = collections.deque(maxlen=3)
     min_velocity = 20
     open_string_min_velocity = 50
     max_fret_distance = 6
@@ -113,3 +113,6 @@ class NoteFilter(object):
             self.note_queue.append(message)
 
         return message
+
+    def get_note_queue(self):
+        return list(self.note_queue)
