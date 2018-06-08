@@ -2,6 +2,8 @@ from mido import MidiFile
 import mido
 import sys
 
+def shit(message):
+    print("fukdik")
 
 def play_midi(fname):
     mid = MidiFile(fname)
@@ -10,7 +12,7 @@ def play_midi(fname):
     #     for msg in track:
     #         print(msg)
 
-    port = mido.open_output()
+    port = mido.open_output(callback=shit)
     port.panic()
 
     print("the port",port)
@@ -18,9 +20,6 @@ def play_midi(fname):
         if msg.type == 'lyrics':
             print(msg)
         port.send(msg)
-
-
-
 
 
 

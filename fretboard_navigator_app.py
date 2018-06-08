@@ -10,6 +10,7 @@ from fretboard.midi import Midi, NoteFilter, get_midi_defaults
 from dynamic_settings_item import SettingDynamicOptions
 from kivy.uix.settings import SettingsWithSidebar
 from color_picker import SettingColorPicker
+from kivy.config import Config
 import constants
 
 class FretboardNavigator(App):
@@ -17,6 +18,8 @@ class FretboardNavigator(App):
     def build(self):
         self.settings_cls = SettingsWithSidebar
 
+        Config.set('kivy', 'KIVY_CLOCK', 'free_all')
+        Config.write()
         # midi_port = 'Fishman TriplePlay TP Guitar'
         app_window = AppWindow()
         # fretb = Fretboard()

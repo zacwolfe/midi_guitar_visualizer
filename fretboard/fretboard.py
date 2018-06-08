@@ -33,7 +33,9 @@ def get_fretboard_adv_defaults():
         'dot_height_ratio': 0.015,
         'finger_offset_ratio': 0.2,
         'finger_width_ratio': 0.02,
-        'note_expiration': 0.5
+        'note_expiration': 0.5,
+        'mma_script_loc': './mma/mma.py',
+        'mma_tmp_dir': './mma/tmp',
     }
 
 def get_fretboard_defaults():
@@ -68,13 +70,14 @@ def get_harmonic_definitions_defaults():
     }
 
 
+
 class Fretboard(RelativeLayout):
 
     # need special setting item for these
     string_guage_range = [14, 45]
     fret_dot_locations = [3, 5, 7, 9, 12, 15, 17, 19, 21]
 
-    neck_taper =ConfigParserProperty(0.0, 'fretboard', 'neck_taper', 'app', val_type=float)
+    neck_taper = ConfigParserProperty(0.0, 'fretboard', 'neck_taper', 'app', val_type=float)
     fretboard_outline_width = ConfigParserProperty(0, 'fretboard_adv', 'fretboard_outline_width', 'app', val_type=int)
     fret_thickness_ratio = ConfigParserProperty(0.0, 'fretboard_adv', 'fret_thickness_ratio', 'app', val_type=float)
     margin_size = ConfigParserProperty(0, 'fretboard', 'margin_size', 'app', val_type=int)
@@ -165,11 +168,12 @@ class Fretboard(RelativeLayout):
         # self.bind(pos=self.redraw_fretboard)
 
     def on_touch_down(self, touch):
-        with self.canvas:
+        pass
+        # with self.canvas:
             # Color(1, 1, 0)
             # d = 30.
             # Ellipse(pos=(touch.x - d / 2, touch.y - d / 2), size=(d, d))
-            print("touch! {},{}".format(touch.x, touch.y))
+            # print("touch! {},{}".format(touch.x, touch.y))
             # self.show_finger(touch.x, touch.y)
 
     def get_fretboard_outline(self):

@@ -7,25 +7,45 @@ from kivy.uix.button import Button
 from kivy.uix.widget import Widget
 from kivy.app import App
 from constants import current_time_millis
+from enum import Enum
+from time import time, sleep
+from threading import Thread
+from kivy.clock import Clock
 
 def get_midi_ports():
     return mido.get_input_names()
 
+def get_midi_output_ports():
+    return mido.get_output_names()
+
 def get_midi_defaults():
     return {
         'midi_port': '',
+        'midi_output_port': '',
     }
 
-
+class PlayerState(Enum):
+    STOPPED=1
+    PLAYING=2
+    PAUSED=3
 
 class Midi(object):
 
     input_port = ''
 
-    def __init__(self, note_filter, default_port, midi_callback):
+    def __init__(self, note_filter, default_port, midi_callback, default_output_port, midi_output_callback=None):
         self.note_filter = note_filter
         self.default_port = default_port
+        self.default_output_port = default_output_port
         self.midi_callback = midi_callback
+        self.midi_output_callback = midi_output_callback
+        self.output_port = None
+        self.input_port = None
+        self.midi_file_path = None
+        self.midi_file = None
+        self.player_state = PlayerState.STOPPED
+        self.midi_playback_trigger = None
+
 
     def open_input(self):
         try:
@@ -34,7 +54,7 @@ class Midi(object):
             print("i'm rebitching")
             box = BoxLayout(orientation="vertical")
 
-            label = Label(text='Could not load midi port {}. \nPlease select a valid midi port'.format(self.default_port))
+            label = Label(text='Could not load midi port {}. \nPlease select a valid midi input port'.format(self.default_port))
             box.add_widget(label)
             button_select = Button(text='OK', size_hint=(.3, .2))
             box.add_widget(Widget(size_hint=(None, .02)))
@@ -49,7 +69,28 @@ class Midi(object):
             button_select.bind(on_release=lambda *args: dismiss())
             popup.open()
 
+    def open_output(self):
+        try:
+            self.output_port = mido.open_output(name=self.default_output_port)
+        except IOError:
+            print("i'm rebitching output")
+            box = BoxLayout(orientation="vertical")
 
+            label = Label(
+                text='Could not load midi port {}. \nPlease select a valid midi output port'.format(self.default_output_port))
+            box.add_widget(label)
+            button_select = Button(text='OK', size_hint=(.3, .2))
+            box.add_widget(Widget(size_hint=(None, .02)))
+            box.add_widget(button_select)
+
+            popup = Popup(title='Midi Port Not Found', content=box, size_hint=(None, None), size=(1000, 400))
+
+            def dismiss():
+                popup.dismiss()
+                App.get_running_app().open_settings()
+
+            button_select.bind(on_release=lambda *args: dismiss())
+            popup.open()
 
     def midi_message_received(self, message):
         if message.type not in ['note_on', 'note_off']:
@@ -70,6 +111,118 @@ class Midi(object):
         self.default_port = port
         if open_port:
             self.open_input()
+
+    def set_default_output_port(self, port, open_port=False):
+        self.shutdown()
+        self.default_output_port = port
+        if open_port:
+            self.open_output()
+
+    def set_midi_file(self, path):
+        self.midi_file_path = path
+        self.midi_file = mido.MidiFile(path)
+        self.midi_messages = list(self.midi_file)
+        self.midi_file_pointer = 0
+
+    def set_midi_output_callback(self, callback):
+        self.midi_output_callback = callback
+
+    def stop(self):
+        print("we stoppin!!!!")
+        self.player_state = PlayerState.STOPPED
+        self.midi_file_pointer = 0
+        self.midi_playback_trigger = None
+        if self.output_port:
+            self.output_port.panic()
+
+
+    def play(self):
+        if self.player_state == PlayerState.PLAYING:
+            self.player_state = PlayerState.PAUSED
+        elif self.player_state == PlayerState.PAUSED:
+            self.player_state = PlayerState.PLAYING
+        else:
+            self.player_state = PlayerState.PLAYING
+
+        if self.midi_file and self.output_port:
+            # self.midi_play_last = time()
+            # self._do_play_loop()
+
+            self.player_thread = Thread(name="player", target=self._do_play)
+            self.player_thread.start()
+
+    def _do_play_loop(self, *args):
+        if self.player_state == PlayerState.PAUSED or self.player_state == PlayerState.STOPPED:
+            return
+
+        try:
+            i = self.midi_file_pointer
+            msg = self.midi_messages[i]
+
+            if i > 0:
+                since_last = time() - self.midi_play_last
+                print("error was {}".format(since_last - msg.time))
+
+            i += 1
+            self.play_message(msg)
+
+            while True:
+                msg = self.midi_messages[i]
+                if msg.time < 0.0001:
+                    self.play_message(msg)
+                    i +=1
+                else:
+                    break
+
+
+            self.midi_file_pointer = i
+            if not self.midi_playback_trigger:
+                self.midi_playback_trigger = Clock.create_trigger_free(self._do_play_loop)
+
+            self.midi_play_last = time()
+            self.midi_playback_trigger.timeout = msg.time
+            print("next trigga is {}".format(msg.time))
+            self.midi_playback_trigger()
+
+        except:
+            print("fuggered")
+            self.stop()
+
+    def play_message(self, msg):
+        if msg.type == 'lyrics':
+            print("got lyric: {}".format(msg))
+        self.output_port.send(msg)
+
+    def _do_play_old(self):
+        for msg in self.midi_file.play(meta_messages=True):
+            self.play_message(msg)
+            if self.player_state != PlayerState.PLAYING:
+                break  # TODO: handle pause/resume
+        print("Dunn playin!!!!")
+
+    def _do_play(self):
+        try:
+            idx = self.midi_file_pointer
+            while True:
+                if self.player_state != PlayerState.PLAYING:
+                    break
+                msg = self.midi_messages[idx]
+                sleep(msg.time)
+                if self.player_state != PlayerState.PLAYING:
+                    break
+                self.play_message(msg)
+                idx += 1
+
+
+            self.midi_file_pointer = idx
+
+        except IndexError:
+            self.stop()
+
+
+
+
+
 
 
 class NoteFilter(object):

@@ -16,6 +16,7 @@ class AppWindow(BoxLayout):
     initial_screen_loc_x = ConfigParserProperty(0, 'window', 'initial_screen_loc_x', 'app', val_type=int)
     initial_screen_loc_y = ConfigParserProperty(0, 'window', 'initial_screen_loc_y', 'app', val_type=int)
     midi_port = ConfigParserProperty(0, 'midi', 'midi_port', 'app')
+    midi_output_port = ConfigParserProperty(0, 'midi', 'midi_output_port', 'app')
 
 
     def __init__(self, **kwargs):
@@ -24,7 +25,7 @@ class AppWindow(BoxLayout):
         self.tuning = P4Tuning(int(ConfigParser.get_configparser('app').get('fretboard','num_frets')))
         self.note_filter = NoteFilter(self.tuning)
         if self.midi_port:
-            self.midi_config = Midi(self.note_filter, self.midi_port, self.midi_message_received)
+            self.midi_config = Midi(self.note_filter, self.midi_port, self.midi_message_received, self.midi_output_port)
 
         self.scale_config = Scales()
         self.chords_config = Chords()
@@ -41,7 +42,7 @@ class AppWindow(BoxLayout):
         self.fretboard = Fretboard(tuning=self.tuning, scale_config=self.scale_config, chord_config=self.chords_config,
                                    pattern_config=self.patterns_config, pos_hint={'x':0, 'y':0}, size_hint=(1, 0.3))
 
-        self.player_panel = PlayerPanel(fretboard=self.fretboard, size_hint=(1, 0.7))
+        self.player_panel = PlayerPanel(fretboard=self.fretboard, midi_config=self.midi_config, size_hint=(1, 0.7))
         self.add_widget(self.player_panel)
         self.add_widget(self.fretboard)
 
@@ -63,9 +64,11 @@ class AppWindow(BoxLayout):
 
     def init_midi(self):
         self.midi_config.open_input()
+        self.midi_config.open_output()
 
     def reload_midi(self):
         self.midi_config.set_default_port(self.midi_port, open_port=True)
+        self.midi_config.set_default_output_port(self.midi_output_port, open_port=True)
 
     def reload_scales(self):
         self.scale_config.load_scales()

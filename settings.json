@@ -8,6 +8,14 @@
     "function_string": "fretboard.midi.get_midi_ports"
   },
   {
+    "type": "dynamic_options",
+    "title": "Midi output port",
+    "desc": "Midi port to use for output",
+    "section": "midi",
+    "key": "midi_output_port",
+    "function_string": "fretboard.midi.get_midi_output_ports"
+  },
+  {
     "type": "numeric",
     "title": "Neck taper",
     "desc": "The amount of neck taper for the fretboard as a percentage of the neck width",
@@ -237,6 +245,20 @@
     "desc": "location of pattern file",
     "section": "harmonic_definitions",
     "key": "patterns_file"
+  },
+  {
+    "type": "path",
+    "title": "MMA Script Location",
+    "desc": "location of pattern file",
+    "section": "fretboard_adv",
+    "key": "mma_script_loc"
+  },
+  {
+    "type": "path",
+    "title": "MMA Temp Location",
+    "desc": "location of MMA temp file",
+    "section": "fretboard_adv",
+    "key": "mma_tmp_dir"
   }
 
 ]
