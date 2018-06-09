@@ -439,7 +439,7 @@ class Fretboard(RelativeLayout):
 
 
     def add_some_stuff(self):
-        self.show_chord_tones('GM7', 'major', 0, 'G')
+        self.show_chord_tones('GM7', 'major', 'G', 0)
         # self.show_chord_tones('G7b9b13', 'melodic_minor', 6, 'G')
         # self.note_on(0, 1)
         # self.note_on(1, 11)
@@ -473,7 +473,7 @@ class Fretboard(RelativeLayout):
             scale = self.scale_config.get_scale(scale_name)
 
         mappings = self.tuning.get_fret_mapping(chord_tone, chord_spec, scale, scale_key, scale_degree)
-        print("we got mappingz of mapping {}".format(json.dumps(mappings)))
+        # print("we got mappingz of mapping {}".format(json.dumps(mappings)))
         # last_3_notes = ((3, 9), (2, 7), (1, 6))
         # self.tuning.get_pattern(mappings, self.pattern_config, last_3_notes, chord_type)
 
@@ -505,7 +505,7 @@ class Fretboard(RelativeLayout):
                 self.highlight_tone_marker(n[0], n[1][0])
 
 
-    def show_chord_tones(self, chord, scale_name=None, scale_degree=None, scale_key=None):
+    def show_chord_tones(self, chord, scale_name=None, scale_key=None, scale_degree=None):
         m = parse_chord(chord)
         if not m:
             return
@@ -522,7 +522,7 @@ class Fretboard(RelativeLayout):
             scale = self.scale_config.get_scale(scale_name)
 
         mappings = self.tuning.get_fret_mapping(chord_tone, chord_spec, scale, scale_key, scale_degree)
-        print("we got mappingz of mapping {}".format(json.dumps(mappings, indent=2)))
+        # print("we got mappingz of mapping {}".format(json.dumps(mappings, indent=2)))
 
         visible_notes = set()
 

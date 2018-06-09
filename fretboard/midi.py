@@ -11,6 +11,9 @@ from enum import Enum
 from time import time, sleep
 from threading import Thread
 from kivy.clock import Clock
+from kivy.event import EventDispatcher
+from kivy.properties import StringProperty
+import re
 
 def get_midi_ports():
     return mido.get_input_names()
@@ -24,16 +27,20 @@ def get_midi_defaults():
         'midi_output_port': '',
     }
 
-class PlayerState(Enum):
-    STOPPED=1
-    PLAYING=2
-    PAUSED=3
+PLAYER_STATE_PLAYING = 'playing'
+PLAYER_STATE_STOPPED = 'stopped'
+PLAYER_STATE_PAUSED = 'paused'
 
-class Midi(object):
+METADATA_REGEX = r'([A-G]{1}[a-zA-Z0-9\#\/]*|\/)(?:\s)?(([A-G][b\#]{0,1})_([a-zA-Z0-9]+)(\((\d)\))?)?(\|([0-9]+)\|)?'
+METADATA_PATTERN = re.compile(METADATA_REGEX)
 
+class Midi(EventDispatcher):
+    player_state = StringProperty('')
     input_port = ''
 
-    def __init__(self, note_filter, default_port, midi_callback, default_output_port, midi_output_callback=None):
+
+    def __init__(self, note_filter, default_port, midi_callback, default_output_port, midi_output_callback=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.note_filter = note_filter
         self.default_port = default_port
         self.default_output_port = default_output_port
@@ -43,8 +50,11 @@ class Midi(object):
         self.input_port = None
         self.midi_file_path = None
         self.midi_file = None
-        self.player_state = PlayerState.STOPPED
+        self.player_state = PLAYER_STATE_STOPPED
+        self.bind(player_state=self.player_state_changed)
         self.midi_playback_trigger = None
+        self.player_callback = None
+        self.player_progress_callback = None
 
 
     def open_input(self):
@@ -127,9 +137,19 @@ class Midi(object):
     def set_midi_output_callback(self, callback):
         self.midi_output_callback = callback
 
+    def set_player_callback(self, callback):
+        self.player_callback = callback
+
+    def set_player_progress_callback(self, callback):
+        self.player_progress_callback = callback
+
+    def player_state_changed(self, *args):
+        if self.player_callback:
+            self.player_callback(self.player_state)
+
     def stop(self):
         print("we stoppin!!!!")
-        self.player_state = PlayerState.STOPPED
+        self.player_state = PLAYER_STATE_STOPPED
         self.midi_file_pointer = 0
         self.midi_playback_trigger = None
         if self.output_port:
@@ -137,12 +157,12 @@ class Midi(object):
 
 
     def play(self):
-        if self.player_state == PlayerState.PLAYING:
-            self.player_state = PlayerState.PAUSED
-        elif self.player_state == PlayerState.PAUSED:
-            self.player_state = PlayerState.PLAYING
+        if self.player_state == PLAYER_STATE_PLAYING:
+            self.player_state = PLAYER_STATE_PAUSED
+        elif self.player_state == PLAYER_STATE_PAUSED:
+            self.player_state = PLAYER_STATE_PLAYING
         else:
-            self.player_state = PlayerState.PLAYING
+            self.player_state = PLAYER_STATE_PLAYING
 
         if self.midi_file and self.output_port:
             # self.midi_play_last = time()
@@ -152,7 +172,7 @@ class Midi(object):
             self.player_thread.start()
 
     def _do_play_loop(self, *args):
-        if self.player_state == PlayerState.PAUSED or self.player_state == PlayerState.STOPPED:
+        if self.player_state == PLAYER_STATE_PAUSED or self.player_state == PLAYER_STATE_PAUSED:
             return
 
         try:
@@ -191,12 +211,26 @@ class Midi(object):
     def play_message(self, msg):
         if msg.type == 'lyrics':
             print("got lyric: {}".format(msg))
-        self.output_port.send(msg)
+            if self.player_progress_callback and msg.text:
+                result = self.parse_metadata(msg.text.strip())
+                print("parsed lyric {}".format(result))
+                if result:
+                    self.player_progress_callback(**result)
+        else:
+            self.output_port.send(msg)
+
+    def parse_metadata(self, txt):
+        m = METADATA_PATTERN.match(txt.strip())
+        if not m:
+            return None
+        else:
+            return {'chord':m.group(1),'scale_type':m.group(4), 'scale_key': m.group(3), 'scale_degree': m.group(6), 'line_num': m.group(8)}
+
 
     def _do_play_old(self):
         for msg in self.midi_file.play(meta_messages=True):
             self.play_message(msg)
-            if self.player_state != PlayerState.PLAYING:
+            if self.player_state != PLAYER_STATE_PLAYING:
                 break  # TODO: handle pause/resume
         print("Dunn playin!!!!")
 
@@ -204,11 +238,11 @@ class Midi(object):
         try:
             idx = self.midi_file_pointer
             while True:
-                if self.player_state != PlayerState.PLAYING:
+                if self.player_state != PLAYER_STATE_PLAYING:
                     break
                 msg = self.midi_messages[idx]
                 sleep(msg.time)
-                if self.player_state != PlayerState.PLAYING:
+                if self.player_state != PLAYER_STATE_PLAYING:
                     break
                 self.play_message(msg)
                 idx += 1
