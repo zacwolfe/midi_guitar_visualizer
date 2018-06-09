@@ -452,6 +452,9 @@ class Fretboard(RelativeLayout):
         pass
 
     def add_some_more_stuff(self):
+        self.show_chord_tones('G#M7', 'major', 'G#', 0)
+
+    def add_some_more_stuff_old(self):
         chord = 'GM7'
         scale_name = 'major'
         scale_key = 'G'
@@ -757,7 +760,7 @@ class ScaleNote(Widget):
             scale_degree = 0
 
         self.scale_degree = scale_degree
-        self.color = Color(*self.degree_colors[self.scale_degree])
+        self.color.rgba = self.degree_colors[self.scale_degree]
         if scale_label:
             self.label.text = scale_label
         else:

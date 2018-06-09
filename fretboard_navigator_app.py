@@ -34,7 +34,6 @@ class FretboardNavigator(App):
 
         Clock.schedule_once(lambda dt: my_callback(), 3)
 
-        # Clock.schedule_once(lambda dt:my_callback2, 6)
         return app_window
 
     def build_config(self, config):

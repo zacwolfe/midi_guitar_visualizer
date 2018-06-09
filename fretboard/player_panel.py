@@ -32,9 +32,13 @@ Volume mp
 Cresc mf 4
 Lyric CHORDS=Both
 
- 
-1      F / Am Gm [<1>F_ionian <2>F_ionian <3>major(3) <4>dorian]
-2      F / Am Gm [<1>A_diminished <2>A_diminished <3>Db_melodicminor <4>Db_melodicminor]
+Repeat
+
+1      F#M7  [<1>F#_major(0)]
+2      GM7  [<1>G_major(0)]
+
+repeatend
+
 '''
     def __init__(self, fretboard, midi_config, **kwargs):
         super(PlayerPanel, self).__init__(**kwargs)
@@ -85,6 +89,10 @@ Lyric CHORDS=Both
 
         self.midi_config.set_player_callback(self.player_state_changed)
         self.midi_config.set_player_progress_callback(self.midi_file_progress)
+
+        if self.initial_script:
+            self.needs_reload = True
+
 
     def update_play_button_text(self, *args):
         self.play_button.text = self.play_label_text
@@ -160,6 +168,10 @@ Lyric CHORDS=Both
         else:
             scale_degree = int(scale_degree)
 
+        if chord == '/':
+            chord = self.last_chord
+        else:
+            self.last_chord = chord
 
         self.fretboard.show_chord_tones(chord, scale_type, scale_key, scale_degree)
 
