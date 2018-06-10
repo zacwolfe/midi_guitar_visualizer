@@ -1,3 +1,4 @@
+from kivy.clock import mainthread
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.button import Button
@@ -162,6 +163,7 @@ repeatend
             self.play_label_text = 'play'
             self.mma_textarea.disabled=False
 
+    @mainthread
     def midi_file_progress(self, chord, scale_type, scale_key, scale_degree=None, line_num=None):
         if scale_degree is None:
             scale_degree = 1

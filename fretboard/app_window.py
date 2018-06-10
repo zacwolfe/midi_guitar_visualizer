@@ -74,10 +74,10 @@ class AppWindow(BoxLayout):
         self.scale_config.load_scales()
 
 
-    def midi_message_received(self, midi_note, channel, on):
+    def midi_message_received(self, midi_note, channel, on, time=None):
         # print('midi!!! {}'.format(message))
         if on:
-            self.fretboard.midi_note_on(midi_note, channel)
+            self.fretboard.midi_note_on(midi_note, channel, time)
             if self.midi_config:
                 last_notes = self.midi_config.note_filter.get_note_queue()
                 if last_notes:

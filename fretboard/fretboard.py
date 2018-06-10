@@ -1,3 +1,5 @@
+from kivy.clock import mainthread
+
 import constants
 import json
 from constants import current_time_millis
@@ -15,6 +17,7 @@ from kivy.properties import BooleanProperty, ListProperty
 from kivy.animation import Animation, AnimationTransition
 import kivy.utils as utils
 from kivy.properties import ConfigParserProperty
+import collections
 
 
 
@@ -115,13 +118,18 @@ class Fretboard(RelativeLayout):
 
 
 
+
     # Config.set('graphics', 'width', str(initial_width))
     # Config.set('graphics', 'height', str(int(initial_width * height_ratio)))
     # Config.set('graphics', 'position', 'custom')
     # Config.set('graphics', 'left', 100)
     # Config.set('graphics', 'top', 10)
-
+    current_harmonic_mapping = None
+    current_pattern_mapping = None
     last_note = None
+    current_chord_type = None
+
+    note_queue = collections.deque(maxlen=3)
     def __init__(self, tuning, scale_config, chord_config, pattern_config, **kwargs):
         super(Fretboard, self).__init__(**kwargs)
 
@@ -157,18 +165,19 @@ class Fretboard(RelativeLayout):
         # you can use this to add instructions rendered before
             print("BEFORE...")
             # self.draw_fretboard()
+            self.redraw_fretboard()
             pass
 
         with self.canvas.after:
             print("AFTER...")
-            self.redraw_fretboard()
+            # self.redraw_fretboard()
             pass
 
         self.bind(size=self.redraw_fretboard)
         # self.bind(pos=self.redraw_fretboard)
 
-    def on_touch_down(self, touch):
-        pass
+    # def on_touch_down(self, touch):
+    #     pass
         # with self.canvas:
             # Color(1, 1, 0)
             # d = 30.
@@ -302,13 +311,17 @@ class Fretboard(RelativeLayout):
 
         return (pos_x, pos_y)
 
-    def midi_note_on(self, midi_note, channel):
-        self.note_on(*self.tuning.get_string_and_fret(midi_note, channel))
+    def midi_note_on(self, midi_note, channel, time=None):
+        self.note_on(*self.tuning.get_string_and_fret(midi_note, channel), time)
+
 
     def midi_note_off(self, midi_note, channel):
         self.note_off(*self.tuning.get_string_and_fret(midi_note, channel))
 
-    def note_on(self, string_num, fret_num):
+    @mainthread
+    def note_on(self, string_num, fret_num, time=None):
+        self.note_queue.append((string_num, fret_num, time))
+        self.update_pattern()
         note_id = _generate_note_id(string_num, fret_num)
 
         note = self.notes.get(note_id)
@@ -327,15 +340,17 @@ class Fretboard(RelativeLayout):
             self.notes[note_id] = note
             self.add_widget(note)
 
-        curr_time = current_time_millis()
-        if self.show_tracers and self.last_note:
 
-            if self.last_note[0] != note and curr_time - self.last_note[1] < self.note_expiration*1000:
+        if self.show_tracers:
+
+            curr_time = current_time_millis()
+
+            if self.last_note and self.last_note[0] != note and curr_time - self.last_note[1] < self.note_expiration*1000:
                 tracer_line_thickness = self.tracer_line_ratio*self.width
                 tracer = Tracer(self, self.last_note[0].string_num,self.last_note[0].fret_num , note.string_num, note.fret_num, self.tracer_fade_time, tracer_line_thickness)
                 self.add_widget(tracer)
 
-        self.last_note = (note, curr_time)
+            self.last_note = (note, curr_time)
 
 
     def note_off(self, string_num, fret_num):
@@ -437,6 +452,63 @@ class Fretboard(RelativeLayout):
         s = 1.0
         return _dist_from_nut(s, fret_num)/_dist_from_nut(s, self.num_frets)
 
+    def extract_notes(self, pattern_mapping):
+        return [(n[0], n[1][0]) for n in [seq for p in pattern_mapping for seq in p[1]]]
+
+    def update_pattern(self):
+        if self.current_harmonic_mapping and self.current_chord_type:
+            recent_notes = self.get_recent_notes()
+
+            if not recent_notes:
+                return
+
+            curr_patt_notes = self.extract_notes(self.current_pattern_mapping) if self.current_pattern_mapping else []
+
+            if curr_patt_notes and self.does_pattern_match(curr_patt_notes, recent_notes):
+                print("pattern is still relevant, continuing...")
+                return
+
+            new_pattern_mapping = self.tuning.get_pattern(self.current_harmonic_mapping, self.pattern_config, recent_notes, self.current_chord_type)
+
+            if new_pattern_mapping:
+
+                new_notes = self.extract_notes(new_pattern_mapping)
+                if curr_patt_notes:
+                    old = set(curr_patt_notes)
+                    new = set(new_notes)
+                    to_hide = old - new
+                    to_add = new - old
+                    if not to_hide and not to_add:
+                        # nothing to do
+                        print("same damn thing all over again!!!")
+                        return
+
+                    self.hide_pattern(to_hide)
+                    new_notes = to_add
+
+                self.current_pattern_mapping = new_pattern_mapping
+                self.show_pattern(new_notes)
+
+                # print("Updating: We got the grand pattern {}".format(self.current_pattern_mapping))
+
+    def get_recent_notes(self):
+        current_time = current_time_millis()
+        max_delay = 1500
+
+        last_time = None
+        result = collections.deque()
+        for n in reversed(self.note_queue):
+            if (not last_time and current_time - n[2] < max_delay) or (n[2] - last_time < max_delay):
+                last_time = n[2]
+                result.appendleft((n[0], n[1]))
+            else:
+                break
+
+        return result
+
+    def does_pattern_match(self, pattern, recent_notes):
+        return recent_notes[-1] in pattern
+
 
     def add_some_stuff(self):
         self.show_chord_tones('GM7', 'major', 'G', 0)
@@ -452,7 +524,13 @@ class Fretboard(RelativeLayout):
         pass
 
     def add_some_more_stuff(self):
-        self.show_chord_tones('G#M7', 'major', 'G#', 0)
+        time = current_time_millis()
+        self.note_on(0,14, time)
+        self.note_on(0,13, time)
+
+        # self.show_chord_tones('G#M7', 'major', 'G#', 0)
+        pass
+
 
     def add_some_more_stuff_old(self):
         chord = 'GM7'
@@ -471,6 +549,7 @@ class Fretboard(RelativeLayout):
         chord_spec = self.chord_config.get_chord(chord_type)
         if not chord_spec:
             raise ValueError("Chord type {} not found".format(chord_type))
+
         scale = None
         if scale_name:
             scale = self.scale_config.get_scale(scale_name)
@@ -484,7 +563,7 @@ class Fretboard(RelativeLayout):
         last_3_notes = ((3, 5), (3, 9), (2, 7))
         mapping = self.tuning.get_pattern(mappings, self.pattern_config, last_3_notes, chord_type)
         print("We got the grand pattern {}".format(mapping))
-        self.show_pattern(mapping)
+        self.show_pattern(self.extract_notes(mapping))
         # self.show_chord_tones('GM7', 'major', 0, 'G')
         # self.show_chord_tones('Am7', 'major', 1, 'A')
 
@@ -501,11 +580,13 @@ class Fretboard(RelativeLayout):
         #
         # self.draw_string_activation(2)
 
-    def show_pattern(self, pattern):
-        for p in pattern:
-            seq = p[1]
-            for n in seq:
-                self.highlight_tone_marker(n[0], n[1][0])
+    def show_pattern(self, notes):
+        for n in notes:
+            self.highlight_tone_marker(*n)
+
+    def hide_pattern(self, notes):
+        for n in notes:
+            self.highlight_tone_marker(*n, hide=True)
 
 
     def show_chord_tones(self, chord, scale_name=None, scale_key=None, scale_degree=None):
@@ -525,6 +606,8 @@ class Fretboard(RelativeLayout):
             scale = self.scale_config.get_scale(scale_name)
 
         mappings = self.tuning.get_fret_mapping(chord_tone, chord_spec, scale, scale_key, scale_degree)
+        self.current_harmonic_mapping = mappings
+        self.current_chord_type = chord_type
         # print("we got mappingz of mapping {}".format(json.dumps(mappings, indent=2)))
 
         visible_notes = set()
@@ -560,13 +643,12 @@ class Fretboard(RelativeLayout):
             self.add_widget(note)
         return note_id
 
-    def highlight_tone_marker(self, string_num, fret_num):
+    def highlight_tone_marker(self, string_num, fret_num, hide=False):
         note_id = _generate_scale_note_id(string_num, fret_num)
 
         note = self.scale_notes.get(note_id)
         if note:
-            note.highlight()
-            note.show()
+            note.set_highlighted(not hide)
 
         return note_id
 
@@ -623,19 +705,24 @@ class StringActivity(Widget):
         super(StringActivity, self).__init__(**kwargs)
         self.string_num = string_num
         self.id = _generate_string_id(string_num)
+        with self.canvas:
+            self.color = Color(*self.finger_color)
+            self.ellipse = Ellipse(pos=self.pos, size=self.size)
         self.do_draw()
         # self.bind(size=self.do_draw)
         self.bind(pos=self.do_draw)
 
     def do_draw(self, *args):
         with self.canvas:
-            self.canvas.clear()
+            # self.canvas.clear()
             if not self.hidden:
-                Color(*self.finger_color)
-                Ellipse(pos=self.pos, size=self.size)
+                self.color.rgba = self.finger_color
+                self.ellipse.pos = self.pos
+                self.ellipse.size = self.size
 
     def on_hidden(self, instance, value):
-        self.do_draw()
+        self.color.a = 0.0
+        # self.do_draw()
 
 class Tracer(Widget):
 
@@ -719,6 +806,7 @@ class ScaleNote(Widget):
                      7: seventh_color,
                      }
 
+    highlighted = BooleanProperty(False)
 
     def __init__(self, fretboard, string_num, fret_num, scale_label=None, scale_degree=0, **kwargs):
         super(ScaleNote, self).__init__(**kwargs)
@@ -748,6 +836,7 @@ class ScaleNote(Widget):
             self.label.text = scale_label
 
         self.highlighted = False
+        self.bind(highlighted=self.update_highlight)
 
         self.add_widget(self.label)
         self.bind(pos=self.do_update)
@@ -772,31 +861,32 @@ class ScaleNote(Widget):
         self.ellipse.size = self.size
         self.label.pos = self.pos
         self.label.size = self.size
-        if self.highlighted:
-            with self.canvas:
-            # self.color.rgba = self.highlight_color
-                self.highlight_color_inst.a = 0.8
-                # Color(*self.highlight_color)
-                self.centered_circle.circle =  (self.center_x, self.center_y, (self.width + 10)/2)
+        self.update_highlight()
 
     def hide(self):
         self.color.a = 0.0
         self.label.text = ''
         self.highlighted = False
-        self.highlight_color_inst.a = 0.0
 
     def show(self):
         self.color.rgba = self.degree_colors[self.scale_degree]
         self.label.text = self.scale_label if self.scale_label is not None else ''
-        if self.highlighted:
             # self.color.rgba = self.highlight_color
+        if self.highlighted:
             with self.canvas:
-                # Color(*self.highlight_color)
                 self.highlight_color_inst.a = 0.8
                 self.centered_circle.circle =  (self.center_x, self.center_y, (self.width + 15)/2)
 
-    def highlight(self):
-        self.highlighted = True
+    def update_highlight(self, *args):
+        with self.canvas:
+            if self.highlighted:
+                self.highlight_color_inst.a = 0.8
+                self.centered_circle.circle = (self.center_x, self.center_y, (self.width + 15) / 2)
+            else:
+                self.highlight_color_inst.a = 0.0
+
+    def set_highlighted(self, highlight):
+        self.highlighted = highlight
 
 
 def _generate_note_id(string_num, fret_num):

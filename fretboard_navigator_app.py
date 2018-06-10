@@ -18,7 +18,7 @@ class FretboardNavigator(App):
     def build(self):
         self.settings_cls = SettingsWithSidebar
 
-        Config.set('kivy', 'KIVY_CLOCK', 'free_all')
+        Config.set('kivy', 'KIVY_CLOCK', 'free_only')
         Config.write()
         # midi_port = 'Fishman TriplePlay TP Guitar'
         app_window = AppWindow()

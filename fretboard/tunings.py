@@ -30,7 +30,7 @@ class Tuning(object):
         return self.extended_tuning[string_num + 2]
 
     def get_string_midi_note(self, string_num, fret_num=None):
-        return to_midi(self.get_string_sci_pitch(string_num)) + fret_num if fret_num else 0
+        return to_midi(self.get_string_sci_pitch(string_num)) + (fret_num if fret_num else 0)
 
     # assumes midi channel == string number
     def get_string_and_fret(self, midi_note, channel):
@@ -207,8 +207,7 @@ class P4Tuning(Tuning):
         return 'p4'
 
     def get_pattern(self, pattern_mapping, pattern_config, last_notes, chord_type='default', scale_type='default'):
-        avg_fret = get_average_fret(last_notes)
-
+        # avg_fret = get_average_fret(last_notes)
         matches = list()
         for note_tuple in last_notes:
             string_frets = pattern_mapping[note_tuple[0]]
@@ -235,17 +234,18 @@ class P4Tuning(Tuning):
 
         mapping = None
         if arp_mode:
+            # print("got matches {}".format(matches))
             roots = self.get_chord_roots(string_num, fret_pos, pattern_mapping, matches[len(matches) - 1])
             # print("got roots {}".format(roots))
             chord_patterns = pattern_config.get_default_arppeggio_patterns(self.get_name(), chord_type)
-            # print("got chord patterns {}".format(chord_patterns))
+            # print("got chord patterns for {}:  {}".format(chord_type, chord_patterns))
             patterns = self.get_patterns(chord_patterns, pattern_mapping, roots)
             # print("got candidate patterns {}".format(patterns))
-            # print("got matches {}".format(matches))
             pattern = self.choose_best_pattern(patterns, fret_pos, matches)
             # print("Got best pattern {}".format(pattern))
             if pattern:
                 mapping = self.extend_pattern(pattern, chord_patterns, pattern_mapping)
+
 
         else:
             roots = self.get_scale_roots(string_num, fret_pos, pattern_mapping, matches[len(matches) - 1])
@@ -275,16 +275,18 @@ class P4Tuning(Tuning):
         # string_mapping = pattern_mapping[string_num]
         chord_degree = chord_label_to_interval(last_match[3])
 
-        lower_root = None
         curr_fret = last_match[1]
         current_string = last_match[0]
 
         curr_root_fret = curr_fret - chord_degree
 
         lower_roots = list()
-        while True:
 
-            if curr_root_fret >= fret_pos - 1 and curr_root_fret <= fret_pos + 4:
+        while True:
+            if current_string >= self.num_strings + 2:
+                break
+
+            if fret_pos - 1 <= curr_root_fret <= fret_pos + 4:
                 lower_roots.append((current_string, curr_root_fret))
             elif curr_root_fret - fret_pos > 4:
                 break
@@ -295,9 +297,12 @@ class P4Tuning(Tuning):
         curr_root_fret = curr_fret + (12 - chord_degree)
         current_string = last_match[0]
         upper_roots = list()
-        while True:
 
-            if curr_root_fret >= fret_pos - 1 and curr_root_fret <= fret_pos + 4:
+        while True:
+            if current_string < -2:
+                break
+
+            if fret_pos - 1 <= curr_root_fret <= fret_pos + 4:
                 upper_roots.append((current_string, curr_root_fret))
             elif curr_root_fret < fret_pos - 1:
                 break
@@ -367,6 +372,7 @@ class P4Tuning(Tuning):
                     if is_match(n, matches):
                         num_matches += 1
 
+
                 results.append((num_matches, total_frets/len(pattern), position, pattern))
 
         results.sort(key = lambda n: (-n[0], abs(fret_pos - n[1])))
@@ -388,6 +394,7 @@ class P4Tuning(Tuning):
         curr_position = chosen_pattern[0]
         start = chosen_pattern[1][0]
         s = (start[0], start[1][0])
+        # print("starting down from {}".format(start))
 
         result = list()
 
@@ -421,15 +428,16 @@ class P4Tuning(Tuning):
                     last_fret = last_fret + 4
                     last_string = string_num
                 sm = None
+
                 for m in string_mapping:
                     if m[0] > last_fret:
                         break
                     if m[2] == n[1]:
                         sm = m
-                        last_fret = sm[0]
+
 
                 if sm:
-                    # pattern_result.append((string_num, (sm[0], sm[1], sm[2], sm[3])))
+                    last_fret = sm[0]
                     pattern_result[0:0] = [(string_num, (sm[0], sm[1], sm[2], sm[3]))]
 
             if pattern_result:
@@ -453,7 +461,7 @@ class P4Tuning(Tuning):
 
             curr_position = 0 if curr_position == 2 else curr_position + 1
 
-            current_pattern = pattern_template[curr_position]
+            current_pattern = list(pattern_template[curr_position])
             # current_pattern = list(reversed(current_pattern))
             # offset = current_pattern[0][0]
             # current_pattern = [[p[0] - offset, p[1]] for p in current_pattern]

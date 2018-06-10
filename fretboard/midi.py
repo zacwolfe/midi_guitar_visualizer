@@ -36,8 +36,6 @@ METADATA_PATTERN = re.compile(METADATA_REGEX)
 
 class Midi(EventDispatcher):
     player_state = StringProperty('')
-    input_port = ''
-
 
     def __init__(self, note_filter, default_port, midi_callback, default_output_port, midi_output_callback=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -60,6 +58,7 @@ class Midi(EventDispatcher):
     def open_input(self):
         try:
             self.input_port = mido.open_input(name=self.default_port, callback=self.midi_message_received)
+            print("input midi port connected! {}".format(self.default_port))
         except IOError:
             print("i'm rebitching")
             box = BoxLayout(orientation="vertical")
@@ -82,6 +81,7 @@ class Midi(EventDispatcher):
     def open_output(self):
         try:
             self.output_port = mido.open_output(name=self.default_output_port)
+            print("output midi port connected! {}".format(self.default_output_port))
         except IOError:
             print("i'm rebitching output")
             box = BoxLayout(orientation="vertical")
@@ -110,7 +110,7 @@ class Midi(EventDispatcher):
             # print('skipping {}'.format(message))
             return
 
-        self.midi_callback(message.note, message.channel, message.type == 'note_on')
+        self.midi_callback(message.note, message.channel, message.type == 'note_on', message.time)
 
     def shutdown(self):
         if self.input_port:
@@ -254,11 +254,6 @@ class Midi(EventDispatcher):
             self.stop()
 
 
-
-
-
-
-
 class NoteFilter(object):
     note_queue = collections.deque(maxlen=3)
     min_velocity = 20
@@ -291,7 +286,7 @@ class NoteFilter(object):
                     # ))
                     if now - last_msg.time < self.max_seq_gap_millis and \
                             self.tuning.get_distance(last_msg.channel, last_msg.note, message.channel, message.note) > self.max_fret_distance:
-                        print("skipping this dick cuz its wide...",  self.tuning.get_distance(last_msg.channel, last_msg.note, message.channel, message.note), now - last_msg.time)
+                        print("skipping this interval cuz its wide...",  self.tuning.get_distance(last_msg.channel, last_msg.note, message.channel, message.note), now - last_msg.time)
                         return
 
             # if self.tuning.is_open_string(message.channel, message.note):
