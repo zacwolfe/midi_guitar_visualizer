@@ -347,7 +347,7 @@ class Fretboard(RelativeLayout):
 
             self.last_note = (note, curr_time)
 
-
+    @mainthread
     def note_off(self, string_num, fret_num):
         note_id = _generate_note_id(string_num, fret_num)
         note = self.notes.get(note_id)
@@ -460,7 +460,7 @@ class Fretboard(RelativeLayout):
             curr_patt_notes = self.extract_notes(self.current_pattern_mapping) if self.current_pattern_mapping else []
 
             if curr_patt_notes and self.does_pattern_match(curr_patt_notes, recent_notes):
-                print("pattern is still relevant, continuing...")
+                # print("pattern is still relevant, continuing...")
                 return
 
             new_pattern_mapping = self.tuning.get_pattern(self.current_harmonic_mapping, self.pattern_config, recent_notes, self.current_chord_type)

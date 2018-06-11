@@ -11,6 +11,7 @@ import queue
 from .midi_player import PLAYER_STATE_PLAYING, PLAYER_STATE_STOPPED, PLAYER_STATE_PAUSED
 from util.alert_dialog import Alert
 
+
 def get_midi_ports():
     return mido.get_input_names()
 
@@ -49,14 +50,16 @@ class Midi(EventDispatcher):
 
 
     def open_input(self):
-        if self.default_port not in get_midi_ports():
+        try:
+            self.input_port = mido.open_input(name=self.default_port, callback=self.midi_message_received)
+            print("input midi port connected! {}".format(self.default_port))
+        except IOError:
             def dismiss():
                 App.get_running_app().open_settings()
 
             Alert(title="Oops",
                   text='Could not load midi port {}. \nPlease select a valid midi input port'.format(self.default_port),
                   on_dismiss_callback=lambda *args: dismiss())
-
 
     def open_output(self):
         if self.default_output_port not in get_midi_output_ports():
