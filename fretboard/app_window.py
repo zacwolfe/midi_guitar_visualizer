@@ -19,13 +19,14 @@ class AppWindow(BoxLayout):
     midi_output_port = ConfigParserProperty(0, 'midi', 'midi_output_port', 'app')
 
 
-    def __init__(self, **kwargs):
+    def __init__(self, midi_player, **kwargs):
         super(AppWindow, self).__init__(**kwargs)
+        self.midi_player = midi_player
         self.orientation='vertical'
         self.tuning = P4Tuning(int(ConfigParser.get_configparser('app').get('fretboard','num_frets')))
         self.note_filter = NoteFilter(self.tuning)
         if self.midi_port:
-            self.midi_config = Midi(self.note_filter, self.midi_port, self.midi_message_received, self.midi_output_port)
+            self.midi_config = Midi(self.midi_player, self.note_filter, self.midi_port, self.midi_message_received, self.midi_output_port)
 
         self.scale_config = Scales()
         self.chords_config = Chords()

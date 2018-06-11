@@ -8,8 +8,9 @@ from kivy.core.window import Window
 
 class Alert(Popup):
 
-    def __init__(self, title, text):
+    def __init__(self, title, text, on_dismiss_callback=None):
         super(Alert, self).__init__()
+        self.on_dismiss_callback = on_dismiss_callback
         content = BoxLayout(orientation="vertical")
         # content = AnchorLayout(anchor_x='center', anchor_y='bottom')
         content.add_widget(
@@ -24,6 +25,13 @@ class Alert(Popup):
             size_hint=(None, None),
             size=(Window.width / 3, Window.height / 3),
             auto_dismiss=True,
+
         )
         ok_button.bind(on_press=popup.dismiss)
+        popup.bind(on_dismiss=self.on_dismiss())
         popup.open()
+
+
+    def on_dismiss(self):
+        if self.on_dismiss_callback:
+            self.on_dismiss_callback()

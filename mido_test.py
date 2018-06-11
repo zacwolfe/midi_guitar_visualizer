@@ -28,5 +28,5 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         fname = sys.argv[1]
 
-    mido.set_backend('mido.backends.rtmidi')
+    # mido.set_backend('mido.backends.rtmidi')
     play_midi(fname)

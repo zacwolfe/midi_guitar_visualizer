@@ -119,4 +119,4 @@ venv.bak/
 .idea/sqlDataSources.xml
 .idea/dynamic.xml
 .idea/uiDesigner.xml
-/mma/tmp/
+/mma/tmp/*

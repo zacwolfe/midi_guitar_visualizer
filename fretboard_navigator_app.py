@@ -1,3 +1,4 @@
+
 import kivy
 kivy.require('1.10.0') # replace with your current kivy version !
 
@@ -6,22 +7,26 @@ from kivy.clock import Clock
 
 from fretboard.fretboard import get_fretboard_adv_defaults, get_fretboard_defaults, get_window_defaults, get_harmonic_definitions_defaults
 from fretboard.app_window import AppWindow
-from fretboard.midi import Midi, NoteFilter, get_midi_defaults
+from fretboard.midi import get_midi_defaults
+
 from dynamic_settings_item import SettingDynamicOptions
 from kivy.uix.settings import SettingsWithSidebar
 from color_picker import SettingColorPicker
 from kivy.config import Config
-import constants
+from fretboard.midi_player import MidiPlayer
+
 
 class FretboardNavigator(App):
 
+    def __init__(self, **kwargs):
+        super(FretboardNavigator, self).__init__(**kwargs)
+
     def build(self):
         self.settings_cls = SettingsWithSidebar
-
+        self.midi_player = MidiPlayer()
         Config.set('kivy', 'KIVY_CLOCK', 'free_only')
         Config.write()
-        # midi_port = 'Fishman TriplePlay TP Guitar'
-        app_window = AppWindow()
+        app_window = AppWindow(self.midi_player)
         # fretb = Fretboard()
         def my_callback():
             app_window.fretboard.add_some_stuff()
@@ -35,6 +40,10 @@ class FretboardNavigator(App):
         Clock.schedule_once(lambda dt: my_callback(), 3)
 
         return app_window
+
+    def on_stop(self):
+        self.midi_player.stop()
+        return True
 
     def build_config(self, config):
         config.setdefaults('fretboard', get_fretboard_defaults())
@@ -61,8 +70,7 @@ class FretboardNavigator(App):
     def on_start(self):
         print("I'm resumed")
         self.root.init_midi()
-    # def get_application_config(self):
-    #     return super(FretboardNavigator, self).get_application_config(
-    #         '~/.%(appname)s.ini')
+
+
 if __name__ == '__main__':
     FretboardNavigator().run()

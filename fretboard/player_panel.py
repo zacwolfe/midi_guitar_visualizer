@@ -12,6 +12,7 @@ from util.alert_dialog import Alert
 import subprocess
 import os
 from kivy.properties import StringProperty, NumericProperty
+from . midi import PLAYER_STATE_STOPPED, PLAYER_STATE_PLAYING, PLAYER_STATE_PAUSED
 
 class PlayerPanel(BoxLayout):
     play_label_text = StringProperty('')
@@ -153,10 +154,10 @@ repeatend
 
 
     def player_state_changed(self, value):
-        if value == 'paused':
+        if value == PLAYER_STATE_PAUSED:
             self.play_label_text = 'continue'
             self.mma_textarea.disabled = True
-        elif value == 'playing':
+        elif value == PLAYER_STATE_PLAYING:
             self.play_label_text = 'pause'
             self.mma_textarea.disabled = True
         else:

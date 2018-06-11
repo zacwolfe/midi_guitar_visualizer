@@ -1,20 +1,15 @@
 from kivy.clock import mainthread
 
-import constants
-import json
 from constants import current_time_millis
-from .tunings import to_midi,from_midi
 from scales.scales import parse_chord
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
-from kivy.app import App
-from kivy.uix.button import Button
-from kivy.config import ConfigParser, Config
+from kivy.config import ConfigParser
 from kivy.graphics import Color, Ellipse, Line, Rectangle
 from kivy.core.window import Window
 from kivy.uix.relativelayout import RelativeLayout
-from kivy.properties import BooleanProperty, ListProperty
-from kivy.animation import Animation, AnimationTransition
+from kivy.properties import BooleanProperty
+from kivy.animation import Animation
 import kivy.utils as utils
 from kivy.properties import ConfigParserProperty
 import collections
