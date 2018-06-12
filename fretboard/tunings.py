@@ -50,6 +50,8 @@ class Tuning(object):
 
     def get_fret_mapping(self, chord_key, chord_def, scale=None, scale_key=None, scale_degree=0):
 
+        if scale_degree == None:
+            scale_degree = 0
         # get num octaves to cover all possible notes and patterns
         num_octaves = int(math.ceil(self.num_frets / 12)) + 1
 
@@ -111,7 +113,7 @@ class Tuning(object):
                     break
 
             # shift all notes up by scale_offset
-            chord_mappings = [(f[0] + chord_offset, f[1], f[2]) for f in chord_mappings]
+            chord_mappings = [(f[0] + chord_offset, f[1], f[2], None) for f in chord_mappings]
             # print("chord mappings before rewrap: {}".format(chord_mappings))
 
             # find notes to wrap around after shift
@@ -124,7 +126,7 @@ class Tuning(object):
 
             # print("das slice is {} and frets is {}".format(splice_idx, frets))
             # prepend 'wrapped' notes to front
-            chord_mappings = [(f[0] % 12, f[1], f[2]) for f in chord_mappings[splice_idx:]] + [f for f in chord_mappings if f[0] <= self.num_frets]
+            chord_mappings = [(f[0] % 12, f[1], f[2], f[3]) for f in chord_mappings[splice_idx:]] + [f for f in chord_mappings if f[0] <= self.num_frets]
             # print("chord mappings after rewrap: {}".format(chord_mappings))
 
             if scale_mapping:

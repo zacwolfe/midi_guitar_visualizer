@@ -13,8 +13,9 @@ class Alert(Popup):
         self.on_dismiss_callback = on_dismiss_callback
         content = BoxLayout(orientation="vertical")
         # content = AnchorLayout(anchor_x='center', anchor_y='bottom')
+        msg_label = Label(text=text, halign='left', text_size=(750,100))
         content.add_widget(
-            Label(text=text, halign='left', valign='top')
+            msg_label
         )
         ok_button = Button(text='Ok', size_hint=(None, None), size=(200, 75))
         content.add_widget(ok_button)
@@ -23,15 +24,14 @@ class Alert(Popup):
             title=title,
             content=content,
             size_hint=(None, None),
-            size=(Window.width / 3, Window.height / 3),
+            size=(800, 500),
             auto_dismiss=True,
-
         )
         ok_button.bind(on_press=popup.dismiss)
-        popup.bind(on_dismiss=self.on_dismiss())
+        popup.bind(on_dismiss=self.on_dismiss)
         popup.open()
 
 
-    def on_dismiss(self):
+    def on_dismiss(self, *args):
         if self.on_dismiss_callback:
             self.on_dismiss_callback()

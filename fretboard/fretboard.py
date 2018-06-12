@@ -123,6 +123,8 @@ class Fretboard(RelativeLayout):
     current_pattern_mapping = None
     last_note = None
     current_chord_type = None
+    scales_visible = BooleanProperty(True)
+    chord_tones_visible = BooleanProperty(True)
 
     note_queue = collections.deque(maxlen=3)
     def __init__(self, tuning, scale_config, chord_config, pattern_config, **kwargs):
@@ -169,6 +171,8 @@ class Fretboard(RelativeLayout):
             pass
 
         self.bind(size=self.redraw_fretboard)
+        self.bind(scales_visible=self.update_scale_visibility)
+        self.bind(chord_tones_visible=self.update_chord_tones_visibility)
         # self.bind(pos=self.redraw_fretboard)
 
     # def on_touch_down(self, touch):
@@ -603,7 +607,7 @@ class Fretboard(RelativeLayout):
         mappings = self.tuning.get_fret_mapping(chord_tone, chord_spec, scale, scale_key, scale_degree)
         self.current_harmonic_mapping = mappings
         self.current_chord_type = chord_type
-        # print("we got mappingz of mapping {}".format(json.dumps(mappings, indent=2)))
+        print("we got strong mappingz of mapping {}".format(mappings))
 
         visible_notes = set()
 
@@ -612,19 +616,61 @@ class Fretboard(RelativeLayout):
                 continue
             for mapping in frets:
                 if mapping:
-                    visible_notes.add(self.add_tone_marker(string_num, mapping[0], mapping[1], mapping[2]))
+                    visible_notes.add(self.add_tone_marker(string_num, mapping[0], mapping[1], mapping[2], mapping[3]))
 
         # hide non-visible notes
         for note_id, note in self.scale_notes.items():
             if note_id not in visible_notes:
                 note.hide()
 
-    def add_tone_marker(self, string_num, fret_num, chord_label, chord_degree):
+    def is_in_mapping(self, string_num, fret_num):
+        if not self.current_harmonic_mapping:
+            return False
+        mapping = self.current_harmonic_mapping.get(string_num)
+        if not mapping:
+            return None
+
+        for m in mapping:
+            if fret_num == m[0]:
+                return True
+            if fret_num > self.tuning.num_frets:
+                return False
+
+        return False
+
+
+    def show_scales(self, show):
+        self.scales_visible = show
+
+    def update_scale_visibility(self, *args):
+        for note_id, note in self.scale_notes.items():
+            if not self.is_in_mapping(note.string_num, note.fret_num):
+                continue
+            if note.is_scale_tone() and not note.is_chord_tone():
+                if self.scales_visible:
+                    note.show()
+                else:
+                    note.hide()
+
+    def show_arpeggio_tones(self, show):
+        self.chord_tones_visible = show
+
+    def update_chord_tones_visibility(self, *args):
+        for note_id, note in self.scale_notes.items():
+            if not self.is_in_mapping(note.string_num, note.fret_num):
+                continue
+            if note.is_chord_tone() and not note.is_scale_tone():
+                if self.chord_tones_visible:
+                    note.show()
+                else:
+                    note.hide()
+
+    def add_tone_marker(self, string_num, fret_num, chord_label, chord_degree, scale_degree):
         note_id = _generate_scale_note_id(string_num, fret_num)
 
         note = self.scale_notes.get(note_id)
         if note:
-            note.set_scale_context(chord_label, chord_degree)
+            note.set_scale_context(chord_label, chord_degree, scale_degree)
             note.show()
         else:
             loc = self.get_finger_location(string_num, fret_num)
@@ -633,7 +679,7 @@ class Fretboard(RelativeLayout):
             size_hint = (self.finger_width_ratio, (self.finger_width_ratio * self.width / self.height))
             # print('pos_hint is {}'.format(pos_hint))
 
-            note = ScaleNote(self, string_num, fret_num, chord_label, chord_degree, pos_hint=pos_hint, size_hint=size_hint)
+            note = ScaleNote(self, string_num, fret_num, chord_label, chord_degree, scale_degree, pos_hint=pos_hint, size_hint=size_hint)
             self.scale_notes[note_id] = note
             self.add_widget(note)
         return note_id
@@ -803,21 +849,21 @@ class ScaleNote(Widget):
 
     highlighted = BooleanProperty(False)
 
-    def __init__(self, fretboard, string_num, fret_num, scale_label=None, scale_degree=0, **kwargs):
+    def __init__(self, fretboard, string_num, fret_num, chord_label=None, chord_degree=0, scale_degree=None, **kwargs):
         super(ScaleNote, self).__init__(**kwargs)
-        self.scale_label=scale_label
+        self.chord_label=chord_label
 
-        if scale_degree is None:
-            scale_degree = 0
+        if chord_degree is None:
+            chord_degree = 0
 
+        self.chord_degree = chord_degree
         self.scale_degree = scale_degree
-
         self.fretboard = fretboard
         self.string_num = string_num
         self.fret_num = fret_num
         self.id = _generate_scale_note_id(string_num, fret_num)
         with self.canvas:
-            self.color = Color(*self.degree_colors[self.scale_degree])
+            self.color = Color(*self.degree_colors[self.chord_degree])
             self.ellipse = Ellipse(pos=self.pos, size=self.size)
             self.highlight_color_inst = Color(*self.highlight_color)
             self.centered_circle = Line(circle=(self.center_x, self.center_y, 50), width=2)
@@ -827,8 +873,8 @@ class ScaleNote(Widget):
         self.label.max_lines = 1
         self.label.valign = 'center'
         self.label.size = self.size
-        if scale_label:
-            self.label.text = scale_label
+        if chord_label:
+            self.label.text = chord_label
 
         self.highlighted = False
         self.bind(highlighted=self.update_highlight)
@@ -837,18 +883,26 @@ class ScaleNote(Widget):
         self.bind(pos=self.do_update)
         self.bind(size=self.do_update)
 
-    def set_scale_context(self, scale_label=None, scale_degree=0):
-        self.scale_label = scale_label
+    def is_chord_tone(self):
+        return bool(self.chord_label)
 
-        if scale_degree is None:
-            scale_degree = 0
+    def is_scale_tone(self):
+        return self.scale_degree is not None
 
+    def set_scale_context(self, chord_label=None, chord_degree=0, scale_degree=None):
+        self.chord_label = chord_label
+
+        if chord_degree is None:
+            chord_degree = 0
+
+        self.chord_degree = chord_degree
         self.scale_degree = scale_degree
-        self.color.rgba = self.degree_colors[self.scale_degree]
-        if scale_label:
-            self.label.text = scale_label
+        self.color.rgba = self.degree_colors[self.chord_degree]
+        if chord_label:
+            self.label.text = chord_label
         else:
             self.label.text = ''
+            self.highlighted = False
 
     def do_update(self, *args):
         self.fretboard.update_note(self)
@@ -864,8 +918,8 @@ class ScaleNote(Widget):
         self.highlighted = False
 
     def show(self):
-        self.color.rgba = self.degree_colors[self.scale_degree]
-        self.label.text = self.scale_label if self.scale_label is not None else ''
+        self.color.rgba = self.degree_colors[self.chord_degree]
+        self.label.text = self.chord_label if self.chord_label is not None else ''
             # self.color.rgba = self.highlight_color
         if self.highlighted:
             with self.canvas:

@@ -1,5 +1,5 @@
 import collections
-
+import queue
 
 # https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
 def dict_merge(dct, merge_dct):
@@ -18,3 +18,12 @@ def dict_merge(dct, merge_dct):
         else:
             dct[k] = merge_dct[k]
     return dct
+
+
+
+def empty_queue(q):
+    while not q.empty():
+        try:
+            q.get_nowait()
+        except queue.Empty:
+            break

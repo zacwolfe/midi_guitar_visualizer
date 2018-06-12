@@ -10,6 +10,7 @@ import re
 import queue
 from .midi_player import PLAYER_STATE_PLAYING, PLAYER_STATE_STOPPED, PLAYER_STATE_PAUSED
 from util.alert_dialog import Alert
+from .utils import empty_queue
 
 
 def get_midi_ports():
@@ -43,32 +44,28 @@ class Midi(EventDispatcher):
         self.midi_file = None
         self.player_state = PLAYER_STATE_STOPPED
         self.bind(player_state=self.player_state_changed)
-        self.midi_playback_trigger = None
         self.player_callback = None
         self.player_progress_callback = None
         self.set_default_output_port(default_output_port)
 
+    def dismiss(self):
+        App.get_running_app().open_settings()
 
     def open_input(self):
         try:
             self.input_port = mido.open_input(name=self.default_port, callback=self.midi_message_received)
             print("input midi port connected! {}".format(self.default_port))
         except IOError:
-            def dismiss():
-                App.get_running_app().open_settings()
-
             Alert(title="Oops",
                   text='Could not load midi port {}. \nPlease select a valid midi input port'.format(self.default_port),
-                  on_dismiss_callback=lambda *args: dismiss())
+                  on_dismiss_callback=lambda *args: self.dismiss())
 
     def open_output(self):
         if self.default_output_port not in get_midi_output_ports():
-            def dismiss():
-                App.get_running_app().open_settings()
 
             Alert(title="Oops",
                   text='Could not load midi port {}. \nPlease select a valid midi output port'.format(self.default_output_port),
-                  on_dismiss_callback=lambda *args: dismiss())
+                  on_dismiss_callback=lambda *args: self.dismiss())
 
     def midi_message_received(self, message):
         if message.type not in ['note_on', 'note_off']:
@@ -101,7 +98,6 @@ class Midi(EventDispatcher):
         self.midi_file_path = path
         self.midi_file = mido.MidiFile(path)
         self.midi_messages = list(self.midi_file)
-        self.midi_file_pointer = 0
 
     def set_midi_output_callback(self, callback):
         self.midi_output_callback = callback
@@ -120,39 +116,33 @@ class Midi(EventDispatcher):
 
         if self.player_state == PLAYER_STATE_STOPPED:
             self.meta_poll_trigger = None
+            empty_queue(self.midi_player.midi_metadata_queue)
 
 
 
     def stop(self):
         print("we stoppin!!!!")
         self.player_state = PLAYER_STATE_STOPPED
-        self.midi_file_pointer = 0
-        self.midi_playback_trigger = None
 
 
     def play(self):
         if self.player_state == PLAYER_STATE_PLAYING:
             self.player_state = PLAYER_STATE_PAUSED
+            return
         elif self.player_state == PLAYER_STATE_PAUSED:
             self.player_state = PLAYER_STATE_PLAYING
+            return
         else:
+            if self.midi_file and self.midi_messages:
+                print("loading up midi_messages of len {} and input_queue empty: {}".format(len(self.midi_messages), self.midi_player.input_queue.empty()))
+                for msg in self.midi_messages:
+                    self.midi_player.input_queue.put(msg, block=True, timeout=2)
+                self.midi_player.input_queue.put(mido.Message('stop'), block=True, timeout=2)
+
+                self.meta_poll_trigger = Clock.create_trigger(self.poll_midi_metadata, 1/60)
+                self.meta_poll_trigger()
+
             self.player_state = PLAYER_STATE_PLAYING
-
-        if self.midi_file and self.midi_messages:
-            for msg in self.midi_messages:
-                self.midi_player.input_queue.put_nowait(msg)
-
-            self.midi_player.set_player_state(PLAYER_STATE_PLAYING)
-            # self.midi_play_last = time()
-            # self._do_play_loop()
-
-            # self.player_thread = Thread(name="player", target=self._do_play)
-            # self.player_thread.start()
-            # self.midi_metadata_queue = Queue()
-            # self.player_process = Process(name="player", target=self._do_play, args=(self.midi_messages, self.midi_metadata_queue, self.shared_player_state,self.default_output_port))
-            # self.player_process.start()
-            self.meta_poll_trigger = Clock.create_trigger(self.poll_midi_metadata, 1/60)
-            self.meta_poll_trigger()
 
     def poll_midi_metadata(self, *args):
         if self.player_state == PLAYER_STATE_STOPPED:
@@ -161,7 +151,11 @@ class Midi(EventDispatcher):
         while True:
             try:
                 msg = self.midi_player.midi_metadata_queue.get_nowait()
-                if type(msg) is dict:
+                if msg == '##done##':
+                    print("WE DUNN "+ msg)
+                    self.stop()
+                    return
+                elif type(msg) is dict:
                     self.player_progress_callback(**msg)
                 else:
                     print("type is {} and {}".format(type(msg), msg))
@@ -171,93 +165,6 @@ class Midi(EventDispatcher):
 
         if self.meta_poll_trigger:
             self.meta_poll_trigger()
-
-
-    def _do_play(self, midi_messages, output_queue, player_state, output_port_name):
-        output_port = None
-        try:
-            print("opening {}".format(output_port_name))
-
-            # output_port = mido.open_output(name=output_port_name, autoreset=True)
-            idx = 0
-            while True:
-                # new_state = input_queue.get_nowait()
-                # if new_state:
-                #     player_state = new_state
-
-                if player_state == PLAYER_STATE_STOPPED:
-                    break
-                elif player_state == PLAYER_STATE_PAUSED:
-                    sleep(0.1)
-                    continue
-
-                msg = midi_messages[idx]
-                sleep(msg.time)
-
-                play_message(msg, output_queue, output_port)
-
-                idx += 1
-
-            if output_port:
-                output_port.close()
-
-        except IndexError:
-            return
-
-
-
-
-
-    def _do_play_loop(self, *args):
-        if self.player_state == PLAYER_STATE_PAUSED or self.player_state == PLAYER_STATE_PAUSED:
-            return
-
-        try:
-            i = self.midi_file_pointer
-            msg = self.midi_messages[i]
-
-            if i > 0:
-                since_last = time() - self.midi_play_last
-                print("error was {}".format(since_last - msg.time))
-
-            i += 1
-            self.play_message(msg)
-
-            while True:
-                msg = self.midi_messages[i]
-                if msg.time < 0.0001:
-                    self.play_message(msg)
-                    i +=1
-                else:
-                    break
-
-
-            self.midi_file_pointer = i
-            if not self.midi_playback_trigger:
-                self.midi_playback_trigger = Clock.create_trigger_free(self._do_play_loop)
-
-            self.midi_play_last = time()
-            self.midi_playback_trigger.timeout = msg.time
-            print("next trigga is {}".format(msg.time))
-            self.midi_playback_trigger()
-
-        except:
-            print("fuggered")
-            self.stop()
-
-
-
-
-
-
-    def _do_play_old(self):
-        for msg in self.midi_file.play(meta_messages=True):
-            self.play_message(msg)
-            if self.player_state != PLAYER_STATE_PLAYING:
-                break  # TODO: handle pause/resume
-        print("Dunn playin!!!!")
-
-
 
 
 class NoteFilter(object):

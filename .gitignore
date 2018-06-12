@@ -119,4 +119,6 @@ venv.bak/
 .idea/sqlDataSources.xml
 .idea/dynamic.xml
 .idea/uiDesigner.xml
+
+# My hump my hump
 /mma/tmp/*

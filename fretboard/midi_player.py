@@ -4,6 +4,7 @@ from time import sleep
 import ctypes
 import re
 import queue
+from .utils import empty_queue
 
 PLAYER_STATE_STOPPED = 0
 PLAYER_STATE_PLAYING = 1
@@ -36,7 +37,6 @@ class MidiPlayer(object):
             # if output_port_name:
             #     print("opening {}".format(output_port_name))
             # output_port = mido.open_output('IAC Driver Bus 1', autoreset=True)
-            print("gottaport ")
             last_port_name = None
             output_port_name = None
             while player_state.value != PLAYER_STATE_KILLED:
@@ -75,7 +75,10 @@ class MidiPlayer(object):
 
                                 try:
                                     msg = input_queue.get(True, 1)
-                                    print("got mussuj {}".format(msg))
+                                    if msg.type=='stop':
+                                        midi_metadata_queue.put_nowait('##done##')
+
+                                    # print("got mussuj {}".format(msg))
                                     sleep(msg.time)
 
                                     play_message(msg, midi_metadata_queue, output_port)
@@ -83,7 +86,7 @@ class MidiPlayer(object):
                                     pass
 
                     except Exception as e:
-                        print("Couldn't open port {}".format(output_port_name))
+                        print("Couldn't open port {}: {}".format(output_port_name, str(e)))
 
                 sleep(0.1)
 
@@ -123,9 +126,3 @@ def parse_metadata(txt):
         return {'chord':m.group(1),'scale_type':m.group(4), 'scale_key': m.group(3), 'scale_degree': m.group(6), 'line_num': m.group(8)}
 
 
-def empty_queue(q):
-    while not q.empty():
-        try:
-            q.get_nowait()
-        except queue.Empty:
-            break
