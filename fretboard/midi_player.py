@@ -11,7 +11,7 @@ PLAYER_STATE_PLAYING = 1
 PLAYER_STATE_PAUSED = 2
 PLAYER_STATE_KILLED = 3
 
-METADATA_REGEX = r'([A-G]{1}[a-zA-Z0-9\#\/]*|\/)(?:\s)?(([A-G][b\#]{0,1})_([a-zA-Z0-9]+)(\((\d)\))?)?(\|([0-9]+)\|)?'
+METADATA_REGEX = r'([A-G]{1}[a-zA-Z0-9\#\/]*|\/)(?:\s)?(([A-G][b\#]{0,1})_([a-zA-Z0-9_]+)(\((\d)\))?)?(\|([0-9]+)\|)?'
 METADATA_PATTERN = re.compile(METADATA_REGEX)
 
 class MidiPlayer(object):

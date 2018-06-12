@@ -256,16 +256,20 @@ repeatend
             if line_num != self.curr_line_num:
                 self.curr_line_num = line_num
 
-        self.chord_input.text = chord
+        if chord:
+            self.chord_input.text = chord
         # self.chord_input.texture_update()
 
-        self.scale_type_input.text = scale_type
+        if scale_type:
+            self.scale_type_input.text = scale_type
         # self.scale_type_input.texture_update()
 
-        self.scale_key_input.text = scale_key
+        if scale_key:
+            self.scale_key_input.text = scale_key
         # self.scale_key_input.texture_update()
 
-        self.scale_degree_input.text = str(scale_degree)
+        if scale_degree is not None:
+            self.scale_degree_input.text = str(scale_degree)
         # self.scale_degree_input.texture_update()
 
     def apply_harmonic_setting(self):
