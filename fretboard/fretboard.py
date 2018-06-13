@@ -510,7 +510,7 @@ class Fretboard(RelativeLayout):
 
 
     def add_some_stuff(self):
-        self.show_chord_tones('GM7', 'major', 'G', 0)
+        self.show_chord_tones('G7b9', 'harmonic_minor', 'G', 4)
         # self.show_chord_tones('G7b9b13', 'melodic_minor', 6, 'G')
         # self.note_on(0, 1)
         # self.note_on(1, 11)
@@ -524,8 +524,8 @@ class Fretboard(RelativeLayout):
 
     def add_some_more_stuff(self):
         time = current_time_millis()
-        self.note_on(0,14, time)
-        self.note_on(0,13, time)
+        self.note_on(5,3, time)
+        self.note_on(5,4, time)
 
         # self.show_chord_tones('G#M7', 'major', 'G#', 0)
         pass
@@ -866,7 +866,7 @@ class ScaleNote(Widget):
             self.color = Color(*self.degree_colors[self.chord_degree])
             self.ellipse = Ellipse(pos=self.pos, size=self.size)
             self.highlight_color_inst = Color(*self.highlight_color)
-            self.centered_circle = Line(circle=(self.center_x, self.center_y, 50), width=2)
+            self.centered_circle = Line(circle=(self.center_x, self.center_y, 50), width=6)
 
         self.label = Label()
         self.label.halign = 'center'
