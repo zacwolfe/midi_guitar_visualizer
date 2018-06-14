@@ -623,6 +623,39 @@ class Fretboard(RelativeLayout):
             if note_id not in visible_notes:
                 note.hide()
 
+    def show_common_chord_tones(self, chord, scale_name=None, scale_key=None, scale_degree=None):
+        m = parse_chord(chord)
+        if not m:
+            return
+
+        chord_tone = m[1]
+        if m[2]:
+            chord_tone += m[2]
+        chord_type = m[3]
+        chord_spec = self.chord_config.get_chord(chord_type)
+        if not chord_spec:
+            raise ValueError("Chord type {} not found".format(chord_type))
+        scale = None
+        if scale_name:
+            scale = self.scale_config.get_scale(scale_name)
+
+        mappings = self.tuning.get_fret_mapping(chord_tone, chord_spec, scale, scale_key, scale_degree)
+        # self.current_harmonic_mapping = mappings
+        # self.current_chord_type = chord_type
+        # print("we got strong mappingz of mapping {}".format(mappings))
+
+        for string_num, frets in mappings.items():
+            if string_num >= self.tuning.num_strings or string_num < 0:
+                continue
+            for mapping in frets:
+                if mapping and mapping[2]:
+                    note_id = _generate_scale_note_id(string_num, mapping[0])
+                    note = self.scale_notes.get(note_id)
+                    if note and note.is_visible() and note.is_chord_tone():
+                        note.indicate_common_tone()
+
+
+
     def is_in_mapping(self, string_num, fret_num):
         if not self.current_harmonic_mapping:
             return False
@@ -916,6 +949,13 @@ class ScaleNote(Widget):
         self.color.a = 0.0
         self.label.text = ''
         self.highlighted = False
+
+    def is_visible(self):
+        return self.color.a > 0.0
+
+    def indicate_common_tone(self):
+        # self.set_highlighted(True)
+        self.color.a = 1.0
 
     def show(self):
         self.color.rgba = self.degree_colors[self.chord_degree]

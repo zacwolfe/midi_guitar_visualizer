@@ -17,6 +17,20 @@
   },
   {
     "type": "numeric",
+    "title": "Early Chord Display",
+    "desc": "Show chords earlier by this percent of a beat (1.0 = 1 quarter note)",
+    "section": "midi",
+    "key": "preload_chord_amt"
+  },
+  {
+    "type": "numeric",
+    "title": "Common Chord Tones Time",
+    "desc": "Show common chords for next chord by this percent of a beat (1.0 = 1 quarter note)",
+    "section": "midi",
+    "key": "common_chord_tone_amt"
+  },
+  {
+    "type": "numeric",
     "title": "Neck taper",
     "desc": "The amount of neck taper for the fretboard as a percentage of the neck width",
     "section": "fretboard",

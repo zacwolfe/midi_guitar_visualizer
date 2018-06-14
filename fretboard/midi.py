@@ -12,7 +12,12 @@ from .midi_player import PLAYER_STATE_PLAYING, PLAYER_STATE_STOPPED, PLAYER_STAT
 from util.alert_dialog import Alert
 from .utils import empty_queue
 
+from mido.midifiles.tracks import _to_abstime, _to_reltime, fix_end_of_track, MidiTrack
+from mido.midifiles.units import tick2second, second2tick
+from mido.midifiles.meta import MetaMessage
 
+
+DEFAULT_TEMPO = 500000
 def get_midi_ports():
     return mido.get_input_names()
 
@@ -23,6 +28,8 @@ def get_midi_defaults():
     return {
         'midi_port': '',
         'midi_output_port': '',
+        'preload_chord_amt': 0.7,
+        'common_chord_tone_amt': 1.5,
     }
 
 METADATA_REGEX = r'([A-G]{1}[a-zA-Z0-9\#\/]*|\/)(?:\s)?(([A-G][b\#]{0,1})_([a-zA-Z0-9]+)(\((\d)\))?)?(\|([0-9]+)\|)?'
@@ -47,6 +54,8 @@ class Midi(EventDispatcher):
         self.player_callback = None
         self.player_progress_callback = None
         self.set_default_output_port(default_output_port)
+        self.preload_chord_amt = 1.0
+        self.common_chord_tone_amt = 2.0
 
     def dismiss(self):
         App.get_running_app().open_settings()
@@ -94,10 +103,54 @@ class Midi(EventDispatcher):
         if open_port:
             self.open_output()
 
-    def set_midi_file(self, path):
+    def set_midi_file(self, path, tempo):
         self.midi_file_path = path
         self.midi_file = mido.MidiFile(path)
-        self.midi_messages = list(self.midi_file)
+        # self.midi_messages = list(self.midi_file)
+        self.midi_messages = list(self.get_midi_messages(self.midi_file))
+
+    def merge_tracks(self, tracks, ticks_per_beat):
+        """Returns a MidiTrack object with all messages from all tracks.
+
+        The messages are returned in playback order with delta times
+        as if they were all in one track.
+        """
+        messages = []
+        for track in tracks:
+            messages.extend(_to_abstime(track))
+
+        aux_msgs = list()
+        print("Preload amt {} and common tone {}".format(self.preload_chord_amt, self.common_chord_tone_amt))
+        for msg in messages:
+            if (self.preload_chord_amt > 0.0 or self.preload_chord_amt > 0.0) and msg.type == 'lyrics' and msg.time >= ticks_per_beat * self.preload_chord_amt:  # push lyrics back a bit
+                if self.common_chord_tone_amt > 0.0:
+                    m = MetaMessage(type='marker', time = msg.time -  ticks_per_beat*self.common_chord_tone_amt, text=msg.text)
+                    aux_msgs.append(m)
+
+                if self.preload_chord_amt > 0.0:
+                    msg.time -= ticks_per_beat * self.preload_chord_amt
+
+        messages += aux_msgs
+        messages.sort(key=lambda msg: msg.time)
+
+        return MidiTrack(fix_end_of_track(_to_reltime(messages)))
+
+    def get_midi_messages(self, midi_file):
+        tempo = DEFAULT_TEMPO
+        merged = self.merge_tracks(midi_file.tracks, midi_file.ticks_per_beat)
+
+        for msg in merged:
+            # Convert message time from absolute time
+            # in ticks to relative time in seconds.
+            if msg.time > 0:
+                delta = tick2second(msg.time, midi_file.ticks_per_beat, tempo)
+            else:
+                delta = 0
+
+            yield msg.copy(time=delta)
+
+            if msg.type == 'set_tempo':
+                tempo = msg.tempo
 
     def set_midi_output_callback(self, callback):
         self.midi_output_callback = callback
@@ -234,3 +287,6 @@ def parse_metadata(txt):
         return None
     else:
         return {'chord':m.group(1),'scale_type':m.group(4), 'scale_key': m.group(3), 'scale_degree': m.group(6), 'line_num': m.group(8)}
+
+# def get_millis_per_quarter_note(tempo):
+#     return 60000 * 0.25 / int(tempo)

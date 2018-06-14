@@ -13,14 +13,22 @@ from kivy.config import ConfigParser
 from util.alert_dialog import Alert
 import subprocess
 import os
+import re
 from kivy.properties import StringProperty, NumericProperty
 from . midi import PLAYER_STATE_STOPPED, PLAYER_STATE_PLAYING, PLAYER_STATE_PAUSED
+from kivy.properties import ConfigParserProperty
+
+TEMPO_REGEX = r'^tempo[\s]+([0-9]+)$'
+TEMPO_PATTERN = re.compile(TEMPO_REGEX, re.IGNORECASE)
 
 class PlayerPanel(BoxLayout):
     play_label_text = StringProperty('')
     curr_line_num = NumericProperty(-1)
+    preload_chord_amt = ConfigParserProperty(0.0, 'midi', 'preload_chord_amt', 'app', val_type=float)
+    common_chord_tone_amt = ConfigParserProperty(0.0, 'midi', 'common_chord_tone_amt', 'app', val_type=float)
     play_button = None
     lines_map = dict()
+    current_tempo = 0
     initial_script = '''
 // Sample tutorial file
 // Fella Bird, try 2
@@ -129,8 +137,13 @@ repeatend
         self.mma_path = ConfigParser.get_configparser('app').get('fretboard_adv','mma_script_loc')
         self.needs_reload = False
 
+        self.bind(preload_chord_amt=self.preload_chord_amt_changed)
+        self.bind(common_chord_tone_amt=self.preload_chord_amt_changed)
         self.midi_config.set_player_callback(self.player_state_changed)
         self.midi_config.set_player_progress_callback(self.midi_file_progress)
+
+        self.midi_config.preload_chord_amt = self.preload_chord_amt
+        self.midi_config.common_chord_tone_amt = self.common_chord_tone_amt
 
         file_contents = None
         try:
@@ -172,6 +185,11 @@ repeatend
         print("text is {}".format(text))
         self.needs_reload = True
 
+    def preload_chord_amt_changed(self, *args):
+        self.midi_config.preload_chord_amt = self.preload_chord_amt
+        self.midi_config.common_chord_tone_amt = self.common_chord_tone_amt
+        self.needs_reload = True
+
     def line_num_changed(self, *args):
         try:
             l = self.lines_map[self.curr_line_num - 1]
@@ -208,9 +226,10 @@ repeatend
             file.write(txt)
         try:
             subprocess.run("{} -f {} {}".format(self.mma_path, self.tmp_mid_outfile, self.tmp_mma_outfile), shell=True, check=True)
-            self.midi_config.set_midi_file(self.tmp_mid_outfile)
-            self.needs_reload = False
             self.build_lines_map(txt)
+            self.midi_config.set_midi_file(self.tmp_mid_outfile, self.current_tempo)
+            self.needs_reload = False
+
         except subprocess.CalledProcessError as e:
             print("error with code {} and msg {}".format(e.returncode, e.output))
             Alert(title="Oops", text="Error caught writing file:{} \n{}".format(e.returncode, e.output))
@@ -219,9 +238,14 @@ repeatend
         self.lines_map.clear()
         lines = txt.splitlines(keepends=True)
         pointer = 0
+        self.current_tempo = 0
         for idx, line in enumerate(lines):
             self.lines_map[idx] = (pointer, line)
             pointer += len(line)
+            m = TEMPO_PATTERN.match(line)
+            if m:
+                self.current_tempo = m.group(1)
+
 
 
     def player_state_changed(self, value):
@@ -238,38 +262,43 @@ repeatend
 
 
     @mainthread
-    def midi_file_progress(self, chord, scale_type, scale_key, scale_degree=None, line_num=None):
+    def midi_file_progress(self, chord, scale_type, scale_key, scale_degree=None, line_num=None, pre_chord=False):
+
         if scale_degree is None:
             scale_degree = 1
         else:
             scale_degree = int(scale_degree)
 
-        if chord == '/':
-            chord = self.last_chord
+        if pre_chord:
+            self.fretboard.show_common_chord_tones(self.last_chord if chord == '/' else chord, scale_type, scale_key, scale_degree)
         else:
-            self.last_chord = chord
 
-        self.fretboard.show_chord_tones(chord, scale_type, scale_key, scale_degree)
+            if chord == '/':
+                chord = self.last_chord
+            else:
+                self.last_chord = chord
 
-        if line_num is not None:
-            line_num = int(line_num)
-            if line_num != self.curr_line_num:
-                self.curr_line_num = line_num
+            self.fretboard.show_chord_tones(chord, scale_type, scale_key, scale_degree)
 
-        if chord:
-            self.chord_input.text = chord
-        # self.chord_input.texture_update()
+            if line_num is not None:
+                line_num = int(line_num)
+                if line_num != self.curr_line_num:
+                    self.curr_line_num = line_num
 
-        if scale_type:
-            self.scale_type_input.text = scale_type
-        # self.scale_type_input.texture_update()
+            if chord:
+                self.chord_input.text = chord
+            # self.chord_input.texture_update()
 
-        if scale_key:
-            self.scale_key_input.text = scale_key
-        # self.scale_key_input.texture_update()
+            if scale_type:
+                self.scale_type_input.text = scale_type
+            # self.scale_type_input.texture_update()
 
-        if scale_degree is not None:
-            self.scale_degree_input.text = str(scale_degree)
+            if scale_key:
+                self.scale_key_input.text = scale_key
+            # self.scale_key_input.texture_update()
+
+            if scale_degree is not None:
+                self.scale_degree_input.text = str(scale_degree)
         # self.scale_degree_input.texture_update()
 
     def apply_harmonic_setting(self):

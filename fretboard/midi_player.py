@@ -106,10 +106,10 @@ class MidiPlayer(object):
             self.player_process.join()
 
 def play_message(msg, output_queue, output_port):
-    if msg.type == 'lyrics':
+    if msg.type == 'lyrics' or msg.type == 'marker':
         print("got lyric: {}".format(msg))
         if msg.text:
-            result = parse_metadata(msg.text.strip())
+            result = parse_metadata(msg.text.strip(), msg.type == 'marker')
             print("parsed lyric {}".format(result))
             if result:
                 output_queue.put_nowait(result)
@@ -118,11 +118,11 @@ def play_message(msg, output_queue, output_port):
         output_port.send(msg)
 
 
-def parse_metadata(txt):
+def parse_metadata(txt, pre_chord=False):
     m = METADATA_PATTERN.match(txt.strip())
     if not m:
         return None
     else:
-        return {'chord':m.group(1),'scale_type':m.group(4), 'scale_key': m.group(3), 'scale_degree': m.group(6), 'line_num': m.group(8)}
+        return {'chord':m.group(1),'scale_type':m.group(4), 'scale_key': m.group(3), 'scale_degree': m.group(6), 'line_num': m.group(8), 'pre_chord': pre_chord}
 
 
