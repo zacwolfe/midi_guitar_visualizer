@@ -127,6 +127,7 @@ class Fretboard(RelativeLayout):
     current_chord_type = None
     scales_visible = BooleanProperty(True)
     chord_tones_visible = BooleanProperty(True)
+    common_chord_tones_visible = True
 
     note_queue = collections.deque(maxlen=3)
     def __init__(self, tuning, scale_config, chord_config, pattern_config, **kwargs):
@@ -634,6 +635,9 @@ class Fretboard(RelativeLayout):
                 note.hide()
 
     def show_common_chord_tones(self, chord, scale_name=None, scale_key=None, scale_degree=None):
+        if not self.common_chord_tones_visible:
+            return
+
         m = parse_chord(chord)
         if not m:
             return
@@ -701,6 +705,9 @@ class Fretboard(RelativeLayout):
 
     def show_arpeggio_tones(self, show):
         self.chord_tones_visible = show
+
+    def set_common_chord_tones_visible(self, show):
+        self.common_chord_tones_visible = show
 
     def update_chord_tones_visibility(self, *args):
         for note_id, note in self.scale_notes.items():
