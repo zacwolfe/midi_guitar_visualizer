@@ -86,6 +86,7 @@ repeatend
         self.mma_textarea.disabled_foreground_color = [0,0,0,1]
         self.mma_textarea.background_disabled_normal = ''
 
+        checkbox_size_hint = 0.2
         self.chord_label = Label(halign='right',text='chord:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.5)
         self.chord_input = TextInput(multiline=False, font_size='26sp')
         self.scale_type_label = Label(halign='right',text='scale type:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.6)
@@ -95,21 +96,24 @@ repeatend
         self.scale_degree_label = Label(halign='right', text='scale degree:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.7)
         self.scale_degree_input = TextInput(multiline=False, font_size='26sp', size_hint_x=0.5)
         self.show_scales_label = Label(halign='right', text='scales:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.5)
-        self.show_scales_checkbox = CheckBox(active=True, size_hint_x=0.3)
+        self.show_scales_checkbox = CheckBox(active=True, size_hint_x=checkbox_size_hint)
         self.show_scales_checkbox.bind(active=self.show_scales)
         self.show_chord_tones_label = Label(halign='right', text='chord tones:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.7)
-        self.show_chord_tones_checkbox = CheckBox(active=True, size_hint_x=0.3)
+        self.show_chord_tones_checkbox = CheckBox(active=True, size_hint_x=checkbox_size_hint)
         self.show_chord_tones_checkbox.bind(active=self.show_chord_tones)
 
-        self.show_common_chord_tones_label = Label(halign='right', text='common chord tones:', font_size='16sp',
-                                            color=(0, 0, 0, 1))
-        self.show_common_chord_tones_checkbox = CheckBox(active=True, size_hint_x=0.3)
+        self.show_pattern_mapping_label = Label(halign='right', text='pattern mapping:', font_size='16sp', color=(0, 0, 0, 1))
+        self.show_pattern_mapping_checkbox = CheckBox(active=True, size_hint_x=checkbox_size_hint)
+        self.show_pattern_mapping_checkbox.bind(active=self.show_pattern_mapping)
+
+        self.show_common_chord_tones_label = Label(halign='right', text='common tones:', font_size='16sp', color=(0, 0, 0, 1))
+        self.show_common_chord_tones_checkbox = CheckBox(active=True, size_hint_x=checkbox_size_hint)
         self.show_common_chord_tones_checkbox.bind(active=self.show_common_chord_tones)
 
         self.apply_button = Button(id='apply', text='apply', on_press=self.button_press)
 
         # self.curr_line_text = Label(color=(1, 0, 0, 0.9), halign='left', id='curr_line', text='a-hole abundance', size_hint=(1, 0.1), font_size='26sp', outline_color=(0, 1, 0))
-        harmonic_panel = GridLayout(cols=15, size_hint_y=0.05, height=90, size_hint_x=1, spacing=[10,10])
+        harmonic_panel = GridLayout(cols=17, size_hint_y=0.05, height=90, size_hint_x=1, spacing=[10,10])
 
         # harmonic_panel.center_x = self.center_x
         harmonic_panel.add_widget(self.chord_label)
@@ -125,6 +129,9 @@ repeatend
         harmonic_panel.add_widget(self.show_scales_checkbox)
         harmonic_panel.add_widget(self.show_chord_tones_label)
         harmonic_panel.add_widget(self.show_chord_tones_checkbox)
+
+        harmonic_panel.add_widget(self.show_pattern_mapping_label)
+        harmonic_panel.add_widget(self.show_pattern_mapping_checkbox)
 
         harmonic_panel.add_widget(self.show_common_chord_tones_label)
         harmonic_panel.add_widget(self.show_common_chord_tones_checkbox)
@@ -165,8 +172,10 @@ repeatend
 
         self.mma_textarea.text = file_contents
 
+        self.showing_scales = True
         if self.initial_script:
             self.needs_reload = True
+
 
     def set_inputs_disabled(self, value):
         self.mma_textarea.disabled = value
@@ -181,10 +190,14 @@ repeatend
 
 
     def show_scales(self, checkbox, value):
+        self.showing_scales = value
         self.fretboard.show_scales(value)
 
     def show_chord_tones(self, checkbox, value):
         self.fretboard.show_arpeggio_tones(value)
+
+    def show_pattern_mapping(self, checkbox, value):
+        self.fretboard.track_patterns(value)
 
     def show_common_chord_tones(self, checkbox, value):
         self.fretboard.set_common_chord_tones_visible(value)
@@ -280,6 +293,10 @@ repeatend
         else:
             scale_degree = int(scale_degree)
 
+        if not self.showing_scales:
+            scale_type = None
+            scale_key = None
+
         if pre_chord:
             self.fretboard.show_common_chord_tones(self.last_chord if chord == '/' else chord, scale_type, scale_key, scale_degree)
         else:
@@ -314,8 +331,9 @@ repeatend
 
     def apply_harmonic_setting(self):
         try:
-            self.fretboard.show_chord_tones(self.chord_input.text, self.scale_type_input.text, self.scale_key_input.text, int(self.scale_degree_input.text))
+            self.fretboard.show_chord_tones(self.chord_input.text, self.scale_type_input.text, self.scale_key_input.text, 0 if not self.scale_degree_input.text else int(self.scale_degree_input.text))
         except Exception as e:
+            print(e)
             Alert(title="Oops", text="Couldn't understand harmonic settings:{}".format(str(e)))
 
     def init_tmp_dir(self, dir):

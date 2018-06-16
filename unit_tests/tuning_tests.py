@@ -113,9 +113,9 @@ class P4TuningTest(unittest.TestCase):
         pattern_args = (chord_tone, chord_type, scale_name, scale_key, scale_degree)
         mappings = self.pattern_mapping.get_fret_mapping(*pattern_args)
         last_3_notes = ((3, 10), (2, 8), (1, 7))
-        self.pattern_mapping.get_pattern(pattern_args, last_3_notes, chord_type)
+        patt_map = self.pattern_mapping.get_pattern(pattern_args, last_3_notes, chord_type)
 
-        return mappings
+        return (mappings, patt_map)
 
 
 

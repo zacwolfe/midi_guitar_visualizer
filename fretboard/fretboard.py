@@ -1,5 +1,5 @@
 from kivy.clock import mainthread
-
+from .utils import mainthread_interrupt
 from constants import current_time_millis
 from scales.scales import parse_chord
 from kivy.uix.widget import Widget
@@ -129,6 +129,7 @@ class Fretboard(RelativeLayout):
     scales_visible = BooleanProperty(True)
     chord_tones_visible = BooleanProperty(True)
     common_chord_tones_visible = True
+    tracking_patterns = True
 
     note_queue = collections.deque(maxlen=3)
     def __init__(self, tuning, pattern_mapper, **kwargs):
@@ -312,6 +313,9 @@ class Fretboard(RelativeLayout):
 
         return (pos_x, pos_y)
 
+    def track_patterns(self, track):
+        self.tracking_patterns = track
+
     def midi_note_on(self, midi_note, channel, time=None):
         self.note_on(*self.tuning.get_string_and_fret(midi_note, channel), time)
 
@@ -319,10 +323,11 @@ class Fretboard(RelativeLayout):
     def midi_note_off(self, midi_note, channel):
         self.note_off(*self.tuning.get_string_and_fret(midi_note, channel))
 
-    @mainthread
+    # @mainthread_interrupt
     def note_on(self, string_num, fret_num, time=None):
         self.note_queue.append((string_num, fret_num, time))
-        self.update_pattern()
+        if self.tracking_patterns:
+            self.update_pattern()
         note_id = _generate_note_id(string_num, fret_num)
 
         note = self.notes.get(note_id)
@@ -353,7 +358,7 @@ class Fretboard(RelativeLayout):
 
             self.last_note = (note, curr_time)
 
-    @mainthread
+    # @mainthread_interrupt
     def note_off(self, string_num, fret_num):
         note_id = _generate_note_id(string_num, fret_num)
         note = self.notes.get(note_id)
@@ -512,7 +517,7 @@ class Fretboard(RelativeLayout):
 
 
     def add_some_stuff(self):
-        self.show_chord_tones('G7b9', 'harmonic_minor', 'G', 4)
+        # self.show_chord_tones('G7b9', 'harmonic_minor', 'G', 4)
         # self.show_chord_tones('G7b9b13', 'melodic_minor', 6, 'G')
         # self.note_on(0, 1)
         # self.note_on(1, 11)
@@ -525,9 +530,9 @@ class Fretboard(RelativeLayout):
         pass
 
     def add_some_more_stuff(self):
-        time = current_time_millis()
-        self.note_on(5,3, time)
-        self.note_on(5,4, time)
+        # time = current_time_millis()
+        # self.note_on(5,3, time)
+        # self.note_on(5,4, time)
 
         # self.show_chord_tones('G#M7', 'major', 'G#', 0)
         pass

@@ -1,6 +1,7 @@
 import collections
 import queue
-
+from functools import wraps, partial
+from kivy.clock import Clock
 # https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
 def dict_merge(dct, merge_dct):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
@@ -27,3 +28,31 @@ def empty_queue(q):
             q.get_nowait()
         except queue.Empty:
             break
+
+
+def mainthread_interrupt(func):
+    '''Decorator that will schedule the call of the function for the next
+    available frame in the mainthread. It can be useful when you use
+    :class:`~kivy.network.urlrequest.UrlRequest` or when you do Thread
+    programming: you cannot do any OpenGL-related work in a thread.
+
+    Please note that this method will return directly and no result can be
+    returned::
+
+        @mainthread
+        def callback(self, *args):
+            print('The request succeeded!',
+                  'This callback is called in the main thread.')
+
+
+        self.req = UrlRequest(url='http://...', on_success=callback)
+
+    .. versionadded:: 1.8.0
+    '''
+    @wraps(func)
+    def delayed_func(*args, **kwargs):
+        def callback_func(dt):
+            func(*args, **kwargs)
+
+        Clock.schedule_once_free(callback_func, 0)
+    return delayed_func
