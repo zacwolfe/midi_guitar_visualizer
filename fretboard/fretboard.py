@@ -12,6 +12,7 @@ from kivy.properties import BooleanProperty
 from kivy.animation import Animation
 import kivy.utils as utils
 from kivy.properties import ConfigParserProperty
+from kivy.clock import Clock
 import collections
 
 
@@ -121,6 +122,7 @@ class Fretboard(RelativeLayout):
     # Config.set('graphics', 'top', 10)
     current_harmonic_mapping = None
     current_pattern_mapping = None
+    current_harmonic_settings = None
     last_note = None
     current_chord_type = None
     scales_visible = BooleanProperty(True)
@@ -593,6 +595,14 @@ class Fretboard(RelativeLayout):
         if not m:
             return
 
+
+        harmonic_setting = (chord, scale_name, scale_key, scale_degree)
+        if self.current_harmonic_settings == harmonic_setting:
+            return
+
+        else:
+            self.current_harmonic_settings = harmonic_setting
+
         chord_tone = m[1]
         if m[2]:
             chord_tone += m[2]
@@ -628,6 +638,10 @@ class Fretboard(RelativeLayout):
         if not m:
             return
 
+        harmonic_setting = (chord, scale_name, scale_key, scale_degree)
+        if self.current_harmonic_settings == harmonic_setting:
+            return
+
         chord_tone = m[1]
         if m[2]:
             chord_tone += m[2]
@@ -652,7 +666,7 @@ class Fretboard(RelativeLayout):
                     note_id = _generate_scale_note_id(string_num, mapping[0])
                     note = self.scale_notes.get(note_id)
                     if note and note.is_visible() and note.is_chord_tone():
-                        note.indicate_common_tone()
+                        note.set_common_tone(True)
 
 
 
@@ -867,6 +881,7 @@ class ScaleNote(Widget):
     thirteenth_color = [0.7, 0.5, 0.0, 0.5]
     seventh_color = [0.8, 0.7, 0.0, 0.6]
     highlight_color = [1.0, 0.0, 0.0, 0.0]
+    common_tone_color = [0.19215686274509805, 0.9764705882352941, 0.12156862745098039, 0.0]
 
     highlight_color_inst = None
 
@@ -881,6 +896,8 @@ class ScaleNote(Widget):
                      }
 
     highlighted = BooleanProperty(False)
+    common_tone = BooleanProperty(False)
+    common_tone_trigger = None
 
     def __init__(self, fretboard, string_num, fret_num, chord_label=None, chord_degree=0, scale_degree=None, **kwargs):
         super(ScaleNote, self).__init__(**kwargs)
@@ -900,6 +917,10 @@ class ScaleNote(Widget):
             self.ellipse = Ellipse(pos=self.pos, size=self.size)
             self.highlight_color_inst = Color(*self.highlight_color)
             self.centered_circle = Line(circle=(self.center_x, self.center_y, 50), width=6)
+            self.common_tone_color_inst = Color(*self.common_tone_color)
+            # self.centered_square = Rectangle(size=(self.width, self.height), pos=(-100, -100))
+            self.centered_square = Line(rectangle=(self.x, self.y, self.width, self.height), width=4)
+
 
         self.label = Label()
         self.label.halign = 'center'
@@ -911,10 +932,13 @@ class ScaleNote(Widget):
 
         self.highlighted = False
         self.bind(highlighted=self.update_highlight)
+        self.bind(common_tone=self.update_common_tone)
 
         self.add_widget(self.label)
         self.bind(pos=self.do_update)
         self.bind(size=self.do_update)
+
+        self.common_tone_trigger = Clock.create_trigger(lambda x: self.hide_common_tone(), 0.5 )
 
     def is_chord_tone(self):
         return bool(self.chord_label)
@@ -931,11 +955,16 @@ class ScaleNote(Widget):
         self.chord_degree = chord_degree
         self.scale_degree = scale_degree
         self.color.rgba = self.degree_colors[self.chord_degree]
+        self.common_tone_trigger()
+
         if chord_label:
             self.label.text = chord_label
         else:
             self.label.text = ''
             self.highlighted = False
+
+    def hide_common_tone(self):
+        self.common_tone = False
 
     def do_update(self, *args):
         self.fretboard.update_note(self)
@@ -944,27 +973,35 @@ class ScaleNote(Widget):
         self.label.pos = self.pos
         self.label.size = self.size
         self.update_highlight()
+        self.update_common_tone()
 
     def hide(self):
         self.color.a = 0.0
         self.label.text = ''
         self.highlighted = False
+        self.common_tone = False
 
     def is_visible(self):
         return self.color.a > 0.0
 
-    def indicate_common_tone(self):
+    def update_common_tone(self, *args):
+
+        if self.common_tone:
+            self.centered_square.rectangle = (self.x + 5, self.y + 5, self.width - 10, self.height - 10)
+            # self.centered_square.pos = (-((self.center_x + 7.5)*0.5), -((self.center_y + 7.5)*0.5))
+            # self.centered_square.size = self.size
+            self.common_tone_color_inst.a = 1.0
+        else:
+            self.common_tone_color_inst.a = 0.0
         # self.set_highlighted(True)
-        self.color.a = 1.0
+        # self.color.a = 1.0
 
     def show(self):
         self.color.rgba = self.degree_colors[self.chord_degree]
         self.label.text = self.chord_label if self.chord_label is not None else ''
-            # self.color.rgba = self.highlight_color
-        if self.highlighted:
-            with self.canvas:
-                self.highlight_color_inst.a = 0.8
-                self.centered_circle.circle =  (self.center_x, self.center_y, (self.width + 15)/2)
+        self.update_highlight()
+        self.update_common_tone()
+
 
     def update_highlight(self, *args):
         with self.canvas:
@@ -976,6 +1013,9 @@ class ScaleNote(Widget):
 
     def set_highlighted(self, highlight):
         self.highlighted = highlight
+
+    def set_common_tone(self, common_tone):
+        self.common_tone = common_tone
 
 
 def _generate_note_id(string_num, fret_num):
