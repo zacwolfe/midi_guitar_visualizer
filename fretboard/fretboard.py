@@ -121,6 +121,7 @@ class Fretboard(RelativeLayout):
     # Config.set('graphics', 'left', 100)
     # Config.set('graphics', 'top', 10)
     current_harmonic_mapping = None
+    current_harmonic_mapping_cachekey = None
     current_pattern_mapping = None
     current_harmonic_settings = None
     last_note = None
@@ -130,7 +131,7 @@ class Fretboard(RelativeLayout):
     common_chord_tones_visible = True
 
     note_queue = collections.deque(maxlen=3)
-    def __init__(self, tuning, scale_config, chord_config, pattern_config, **kwargs):
+    def __init__(self, tuning, pattern_mapper, **kwargs):
         super(Fretboard, self).__init__(**kwargs)
 
         def get_color(key):
@@ -143,9 +144,7 @@ class Fretboard(RelativeLayout):
         self.nut_color = get_color('nut_color')
         self.finger_color = get_color('finger_color')
         self.tuning = tuning
-        self.scale_config = scale_config
-        self.chord_config = chord_config
-        self.pattern_config = pattern_config
+        self.pattern_mapper = pattern_mapper
         self.notes = {}
         self.scale_notes = {}
 
@@ -470,7 +469,7 @@ class Fretboard(RelativeLayout):
                 # print("pattern is still relevant, continuing...")
                 return
 
-            new_pattern_mapping = self.tuning.get_pattern(self.current_harmonic_mapping, self.pattern_config, recent_notes, self.current_chord_type)
+            new_pattern_mapping = self.pattern_mapper.get_pattern(self.current_harmonic_mapping_cachekey, recent_notes, self.current_chord_type)
 
             if new_pattern_mapping:
 
@@ -482,7 +481,7 @@ class Fretboard(RelativeLayout):
                     to_add = new - old
                     if not to_hide and not to_add:
                         # nothing to do
-                        print("same damn thing all over again!!!")
+                        # print("same damn thing all over again!!!")
                         return
 
                     self.hide_pattern(to_hide)
@@ -506,7 +505,7 @@ class Fretboard(RelativeLayout):
             else:
                 break
 
-        return result
+        return tuple(result)
 
     def does_pattern_match(self, pattern, recent_notes):
         return recent_notes[-1] in pattern
@@ -532,42 +531,6 @@ class Fretboard(RelativeLayout):
 
         # self.show_chord_tones('G#M7', 'major', 'G#', 0)
         pass
-
-
-    def add_some_more_stuff_old(self):
-        chord = 'GM7'
-        scale_name = 'major'
-        scale_key = 'G'
-        scale_degree = 0
-
-        m = parse_chord(chord)
-        if not m:
-            return
-
-        chord_tone = m[1]
-        if m[2]:
-            chord_tone += m[2]
-        chord_type = m[3]
-        chord_spec = self.chord_config.get_chord(chord_type)
-        if not chord_spec:
-            raise ValueError("Chord type {} not found".format(chord_type))
-
-        scale = None
-        if scale_name:
-            scale = self.scale_config.get_scale(scale_name)
-
-        mappings = self.tuning.get_fret_mapping(chord_tone, chord_spec, scale, scale_key, scale_degree)
-        # print("we got mappingz of mapping {}".format(json.dumps(mappings)))
-        # last_3_notes = ((3, 9), (2, 7), (1, 6))
-        # self.tuning.get_pattern(mappings, self.pattern_config, last_3_notes, chord_type)
-
-        # last_3_notes = ((0, 6), (0, 9))
-        last_3_notes = ((3, 5), (3, 9), (2, 7))
-        mapping = self.tuning.get_pattern(mappings, self.pattern_config, last_3_notes, chord_type)
-        print("We got the grand pattern {}".format(mapping))
-        self.show_pattern(self.extract_notes(mapping))
-        # self.show_chord_tones('GM7', 'major', 0, 'G')
-        # self.show_chord_tones('Am7', 'major', 1, 'A')
 
     def remove_some_stuff(self):
         pass
@@ -608,17 +571,15 @@ class Fretboard(RelativeLayout):
         if m[2]:
             chord_tone += m[2]
         chord_type = m[3]
-        chord_spec = self.chord_config.get_chord(chord_type)
-        if not chord_spec:
-            raise ValueError("Chord type {} not found".format(chord_type))
-        scale = None
-        if scale_name:
-            scale = self.scale_config.get_scale(scale_name)
 
-        mappings = self.tuning.get_fret_mapping(chord_tone, chord_spec, scale, scale_key, scale_degree)
+        self.current_harmonic_mapping_cachekey = (chord_tone, chord_type, scale_name, scale_key, scale_degree)
+
+        mappings = self.pattern_mapper.get_fret_mapping(*self.current_harmonic_mapping_cachekey)
+        # mappings = self.tuning.get_fret_mapping(chord_tone, chord_spec, scale, scale_key, scale_degree)
         self.current_harmonic_mapping = mappings
+        # self.current_harmonic_mapping_cachekey = (chord_tone, str(chord_spec) if chord_spec else None, str(scale) if scale else None, scale_key, 0 if scale_degree is None else scale_degree)
         self.current_chord_type = chord_type
-        print("we got strong mappingz of mapping {}".format(mappings))
+        # print("we got strong mappingz of mapping {}".format(mappings))
 
         visible_notes = set()
 
@@ -650,14 +611,9 @@ class Fretboard(RelativeLayout):
         if m[2]:
             chord_tone += m[2]
         chord_type = m[3]
-        chord_spec = self.chord_config.get_chord(chord_type)
-        if not chord_spec:
-            raise ValueError("Chord type {} not found".format(chord_type))
-        scale = None
-        if scale_name:
-            scale = self.scale_config.get_scale(scale_name)
 
-        mappings = self.tuning.get_fret_mapping(chord_tone, chord_spec, scale, scale_key, scale_degree)
+        mappings = self.pattern_mapper.get_fret_mapping(chord_tone, chord_type, scale_name, scale_key, scale_degree)
+        # mappings = self.tuning.get_fret_mapping(chord_tone, chord_spec, scale, scale_key, scale_degree)
         # self.current_harmonic_mapping = mappings
         # self.current_chord_type = chord_type
         # print("we got strong mappingz of mapping {}".format(mappings))

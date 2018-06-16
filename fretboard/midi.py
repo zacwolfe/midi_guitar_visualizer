@@ -15,7 +15,7 @@ from .utils import empty_queue
 from mido.midifiles.tracks import _to_abstime, _to_reltime, fix_end_of_track, MidiTrack
 from mido.midifiles.units import tick2second, second2tick
 from mido.midifiles.meta import MetaMessage
-
+import functools
 
 DEFAULT_TEMPO = 500000
 def get_midi_ports():
@@ -252,7 +252,7 @@ class NoteFilter(object):
                     # ))
                     if now - last_msg.time < self.max_seq_gap_millis and \
                             self.tuning.get_distance(last_msg.channel, last_msg.note, message.channel, message.note) > self.max_fret_distance:
-                        print("skipping this interval cuz its wide...",  self.tuning.get_distance(last_msg.channel, last_msg.note, message.channel, message.note), now - last_msg.time)
+                        # print("skipping this interval cuz its wide...",  self.tuning.get_distance(last_msg.channel, last_msg.note, message.channel, message.note), now - last_msg.time)
                         return
 
             # if self.tuning.is_open_string(message.channel, message.note):
@@ -281,6 +281,7 @@ def play_message(msg, output_queue, output_port=None):
         else:
             output_queue.put_nowait(msg)
 
+@functools.lru_cache(maxsize=128)
 def parse_metadata(txt):
     m = METADATA_PATTERN.match(txt.strip())
     if not m:

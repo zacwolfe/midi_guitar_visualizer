@@ -5,6 +5,7 @@ from kivy.properties import ConfigParserProperty
 from .fretboard import Fretboard
 from .tunings import P4Tuning
 from .midi import Midi, NoteFilter
+from .pattern_mapper import P4TuningPatternMatcher, StandardTuningPatternMatcher
 from .player_panel import PlayerPanel
 from scales.scales import Scales, Chords, Patterns
 from kivy.config import ConfigParser
@@ -39,9 +40,8 @@ class AppWindow(BoxLayout):
             Window.clearcolor = (1, 1, 1, 1)
             self.rect = Rectangle(pos=self.pos, size=self.size, group='fb')
 
-        layout = BoxLayout(orientation='vertical')
-        self.fretboard = Fretboard(tuning=self.tuning, scale_config=self.scale_config, chord_config=self.chords_config,
-                                   pattern_config=self.patterns_config, pos_hint={'x':0, 'y':0}, size_hint=(1, 0.3))
+        pattern_mapper = P4TuningPatternMatcher(self.tuning, self.chords_config, self.scale_config, self.patterns_config)
+        self.fretboard = Fretboard(tuning=self.tuning, pattern_mapper=pattern_mapper, pos_hint={'x':0, 'y':0}, size_hint=(1, 0.3))
 
         self.player_panel = PlayerPanel(fretboard=self.fretboard, midi_config=self.midi_config, size_hint=(1, 0.7))
         self.add_widget(self.player_panel)

@@ -7,7 +7,7 @@ from kivy.uix.button import Button
 from kivy.uix.widget import Widget
 from kivy.app import App
 import re
-
+import functools
 scale_systems_file = 'scale_systems.toml'
 
 class Scales(object):
@@ -163,6 +163,7 @@ def chord_label_to_interval(label):
 CHORD_REGEX = r'^([a-gA-G])(b|#)?([a-zA-Z0-9#]*)$'
 chord_pattern = re.compile(CHORD_REGEX)
 
+@functools.lru_cache(maxsize=256)
 def parse_chord(chord):
     return chord_pattern.match(chord)
 
