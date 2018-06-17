@@ -5,6 +5,7 @@ import ctypes
 import re
 import queue
 from .utils import empty_queue
+import functools
 
 PLAYER_STATE_STOPPED = 0
 PLAYER_STATE_PLAYING = 1
@@ -107,10 +108,10 @@ class MidiPlayer(object):
 
 def play_message(msg, output_queue, output_port):
     if msg.type == 'lyrics' or msg.type == 'marker':
-        print("got lyric: {}".format(msg))
+        # print("got lyric: {}".format(msg))
         if msg.text:
             result = parse_metadata(msg.text.strip(), msg.type == 'marker')
-            print("parsed lyric {}".format(result))
+            # print("parsed lyric {}".format(result))
             if result:
                 output_queue.put_nowait(result)
                 # self.player_progress_callback(**result)
@@ -118,6 +119,7 @@ def play_message(msg, output_queue, output_port):
         output_port.send(msg)
 
 
+@functools.lru_cache(maxsize=128)
 def parse_metadata(txt, pre_chord=False):
     m = METADATA_PATTERN.match(txt.strip())
     if not m:

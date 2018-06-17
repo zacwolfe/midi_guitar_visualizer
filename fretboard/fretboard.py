@@ -945,6 +945,7 @@ class ScaleNote(Widget):
 
     def hide(self):
         self.color.a = 0.0
+        self.ellipse.size = (0,0)
         self.label.text = ''
         self.highlighted = False
         self.common_tone = False
@@ -961,12 +962,14 @@ class ScaleNote(Widget):
             self.common_tone_color_inst.a = 1.0
         else:
             self.common_tone_color_inst.a = 0.0
+            self.centered_square.rectangle = (0, 0, 0, 0)
         # self.set_highlighted(True)
         # self.color.a = 1.0
 
     def show(self):
         self.color.rgba = self.degree_colors[self.chord_degree]
         self.label.text = self.chord_label if self.chord_label is not None else ''
+        self.ellipse.size = self.size
         self.update_highlight()
         self.update_common_tone()
 
@@ -978,6 +981,7 @@ class ScaleNote(Widget):
                 self.centered_circle.circle = (self.center_x, self.center_y, (self.width + 15) / 2)
             else:
                 self.highlight_color_inst.a = 0.0
+                self.centered_circle.circle = (0, 0, 0)
 
     def set_highlighted(self, highlight):
         self.highlighted = highlight

@@ -32,6 +32,7 @@ class Tuning(object):
 
     @functools.lru_cache(maxsize=256)
     def get_string_midi_note(self, string_num, fret_num):
+        # print("cache miss note on {}".format((string_num, fret_num)))
         return to_midi(self.get_string_sci_pitch(string_num)) + fret_num
 
     # assumes midi channel == string number

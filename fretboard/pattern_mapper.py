@@ -13,6 +13,7 @@ class StandardTuningPatternMatcher(object):
 
     @functools.lru_cache(maxsize=128)
     def get_fret_mapping(self, chord_key, chord_type, scale_name=None, scale_key=None, scale_degree=0):
+        # print("cache miss on {}".format((chord_key, chord_type, scale_name, scale_key, scale_degree)))
         chord_def = self.chord_config.get_chord(chord_type)
         if not chord_def:
             raise ValueError("Chord type {} not found".format(chord_type))
@@ -174,6 +175,7 @@ class P4TuningPatternMatcher(StandardTuningPatternMatcher):
 
     @functools.lru_cache(maxsize=128)
     def get_pattern(self, pattern_mapping_args, last_notes, chord_type='default', scale_type='default'):
+        # print("pat cache miss on {}".format((pattern_mapping_args, last_notes, chord_type, scale_type)))
         pattern_mapping = self.get_fret_mapping(*pattern_mapping_args)
         if not pattern_mapping:
             return None

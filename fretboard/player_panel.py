@@ -17,6 +17,7 @@ import re
 from kivy.properties import StringProperty, NumericProperty
 from . midi import PLAYER_STATE_STOPPED, PLAYER_STATE_PLAYING, PLAYER_STATE_PAUSED
 from kivy.properties import ConfigParserProperty
+from kivy.core.window import Window
 
 TEMPO_REGEX = r'^tempo[\s]+([0-9]+)$'
 TEMPO_PATTERN = re.compile(TEMPO_REGEX, re.IGNORECASE)
@@ -27,6 +28,7 @@ class PlayerPanel(BoxLayout):
     preload_chord_amt = ConfigParserProperty(0.0, 'midi', 'preload_chord_amt', 'app', val_type=float)
     common_chord_tone_amt = ConfigParserProperty(0.0, 'midi', 'common_chord_tone_amt', 'app', val_type=float)
     play_button = None
+    player_state = PLAYER_STATE_STOPPED
     lines_map = dict()
     current_tempo = 0
     initial_script = '''
@@ -176,6 +178,33 @@ repeatend
         if self.initial_script:
             self.needs_reload = True
 
+        self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
+        self._keyboard.bind(on_key_down=self._on_keyboard_down)
+
+    def _keyboard_closed(self):
+        self._keyboard.unbind(on_key_down=self._on_keyboard_down)
+        self._keyboard = None
+
+    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
+        print("key down shit biggler {} and {} with modifiers {}".format(keycode, text, modifiers))
+        if keycode[1] == 'spacebar':
+            if self.player_state == PLAYER_STATE_STOPPED:
+                self.play_pressed()
+            elif self.player_state == PLAYER_STATE_PLAYING:
+                if modifiers and modifiers[0] == 'alt':
+                    self.play_pressed()
+                else:
+                    self.stop_playing_midi()
+
+        # if keycode[1] == 'w':
+        #     self.player1.center_y += 10
+        # elif keycode[1] == 's':
+        #     self.player1.center_y -= 10
+        # elif keycode[1] == 'up':
+        #     self.player2.center_y += 10
+        # elif keycode[1] == 'down':
+        #     self.player2.center_y -= 10
+        return True
 
     def set_inputs_disabled(self, value):
         self.mma_textarea.disabled = value
@@ -226,10 +255,7 @@ repeatend
     def button_press(self, button):
         txt = 'mine ass {} has thrived for many a year'.format(button.id)
         if button.id == 'play':
-            if self.needs_reload:
-                self.reload_mma()
-            if not self.needs_reload:
-                self.play_midi()
+            self.play_pressed()
         elif button.id == 'stop':
             self.stop_playing_midi()
         elif button.id == 'apply':
@@ -237,6 +263,12 @@ repeatend
         # self.curr_line_text.text = txt
         # self.curr_line_text.texture_update()
         # print(txt)
+
+    def play_pressed(self):
+        if self.needs_reload:
+            self.reload_mma()
+        if not self.needs_reload:
+            self.play_midi()
 
     def play_midi(self):
         self.midi_config.play()
@@ -273,6 +305,7 @@ repeatend
 
 
     def player_state_changed(self, value):
+        self.player_state = value
         if value == PLAYER_STATE_PAUSED:
             self.play_label_text = 'continue'
             self.set_inputs_disabled(True)

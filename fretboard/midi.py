@@ -15,7 +15,6 @@ from .utils import empty_queue
 from mido.midifiles.tracks import _to_abstime, _to_reltime, fix_end_of_track, MidiTrack
 from mido.midifiles.units import tick2second, second2tick
 from mido.midifiles.meta import MetaMessage
-import functools
 
 DEFAULT_TEMPO = 500000
 def get_midi_ports():
@@ -265,29 +264,3 @@ class NoteFilter(object):
     def get_note_queue(self):
         return list(self.note_queue)
 
-
-def play_message(msg, output_queue, output_port=None):
-    if msg.type == 'lyrics':
-        print("got lyric: {}".format(msg))
-        if msg.text:
-            result = parse_metadata(msg.text.strip())
-            print("parsed lyric {}".format(result))
-            if result:
-                output_queue.put_nowait(result)
-                # self.player_progress_callback(**result)
-    else:
-        if output_port:
-            output_port.send(msg)
-        else:
-            output_queue.put_nowait(msg)
-
-@functools.lru_cache(maxsize=128)
-def parse_metadata(txt):
-    m = METADATA_PATTERN.match(txt.strip())
-    if not m:
-        return None
-    else:
-        return {'chord':m.group(1),'scale_type':m.group(4), 'scale_key': m.group(3), 'scale_degree': m.group(6), 'line_num': m.group(8)}
-
-# def get_millis_per_quarter_note(tempo):
-#     return 60000 * 0.25 / int(tempo)
