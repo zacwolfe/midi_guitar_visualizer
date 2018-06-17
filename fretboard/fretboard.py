@@ -970,17 +970,17 @@ class ScaleNote(Widget):
         if being_played is not None:
             self.being_played = being_played
 
-
         self.chord_degree = chord_degree
         self.scale_degree = scale_degree
         # self.color.rgba = self.degree_colors[0 if self.being_played else self.chord_degree]
         self.common_tone_trigger()
+        self.highlighted = False
 
         if chord_label:
             self.label.text = chord_label
         else:
             self.label.text = ''
-            self.highlighted = False
+
 
         # self.is_showing = True
 
