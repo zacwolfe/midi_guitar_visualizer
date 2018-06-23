@@ -14,6 +14,7 @@ import kivy.utils as utils
 from kivy.properties import ConfigParserProperty
 from kivy.clock import Clock
 import collections
+from queue import Queue, Empty, Full
 
 
 
@@ -176,6 +177,10 @@ class Fretboard(RelativeLayout):
         self.bind(size=self.redraw_fretboard)
         self.bind(scales_visible=self.update_scale_visibility)
         self.bind(chord_tones_visible=self.update_chord_tones_visibility)
+
+        self.midi_queue = Queue()
+        self.midi_trigger = Clock.create_trigger(self.poll_midi_data, 1 / 60)
+        self.midi_trigger()
         # self.bind(pos=self.redraw_fretboard)
 
     # def on_touch_down(self, touch):
@@ -316,15 +321,29 @@ class Fretboard(RelativeLayout):
     def track_patterns(self, track):
         self.tracking_patterns = track
 
-    # @mainthread_interrupt
+    def poll_midi_data(self, *args):
+        while True:
+            try:
+                t = self.midi_queue.get_nowait()
+                if t[0] == 'on':
+                    self.note_on(*self.tuning.get_string_and_fret(t[1], t[2]), t[3])
+                else:
+                    self.note_off(*self.tuning.get_string_and_fret(t[1], t[2]))
+            except Empty:
+                break
+
+        self.midi_trigger()
+
     def midi_note_on(self, midi_note, channel, time=None):
-        self.note_on(*self.tuning.get_string_and_fret(midi_note, channel), time)
+        self.midi_queue.put_nowait(('on', midi_note, channel, time))
 
-    # @mainthread
+        # self.note_on(*self.tuning.get_string_and_fret(midi_note, channel), time)
+
     def midi_note_off(self, midi_note, channel):
-        self.note_off(*self.tuning.get_string_and_fret(midi_note, channel))
+        self.midi_queue.put_nowait(('off', midi_note, channel, None))
+        # self.note_off(*self.tuning.get_string_and_fret(midi_note, channel))
 
-    @mainthread_interrupt
+    # @mainthread_interrupt
     def note_on(self, string_num, fret_num, time=None):
         self.note_queue.append((string_num, fret_num, time))
         if self.tracking_patterns:
@@ -364,7 +383,7 @@ class Fretboard(RelativeLayout):
             self.last_note = (note, curr_time)
 
     # @mainthread_interrupt
-    @mainthread
+    # @mainthread
     def note_off(self, string_num, fret_num):
         # note_id = _generate_note_id(string_num, fret_num)
         note_id = _generate_scale_note_id(string_num, fret_num)
