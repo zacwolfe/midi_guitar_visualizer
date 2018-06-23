@@ -14,6 +14,8 @@ from kivy.uix.settings import SettingsWithSidebar
 from color_picker import SettingColorPicker
 from kivy.config import Config
 from fretboard.midi_player import MidiPlayer
+import cProfile
+import pstats
 
 
 class FretboardNavigator(App):
@@ -24,7 +26,9 @@ class FretboardNavigator(App):
     def build(self):
         self.settings_cls = SettingsWithSidebar
         self.midi_player = MidiPlayer()
-        Config.set('kivy', 'KIVY_CLOCK', 'free_only')
+        Config.set('kivy', 'KIVY_CLOCK', 'free_all')
+        Config.set('modules', 'fb_monitor', '')
+        Config.set('input', 'mouse', 'mouse,disable_multitouch')
         Config.write()
         app_window = AppWindow(self.midi_player)
         # fretb = Fretboard()
@@ -43,6 +47,10 @@ class FretboardNavigator(App):
 
     def on_stop(self):
         self.midi_player.stop()
+        self.profile.disable()
+        self.profile.dump_stats('fretboard.profile')
+        p = pstats.Stats('fretboard.profile')
+        p.strip_dirs().sort_stats(-1).print_stats()
         return True
 
     def build_config(self, config):
@@ -70,6 +78,8 @@ class FretboardNavigator(App):
     def on_start(self):
         print("I'm resumed")
         self.root.init_midi()
+        self.profile = cProfile.Profile()
+        self.profile.enable()
 
 
 if __name__ == '__main__':

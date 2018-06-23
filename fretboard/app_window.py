@@ -79,10 +79,10 @@ class AppWindow(BoxLayout):
         # print('midi!!! {}'.format(message))
         if on:
             self.fretboard.midi_note_on(midi_note, channel, time)
-            if self.midi_config:
-                last_notes = self.midi_config.note_filter.get_note_queue()
-                if last_notes:
-                    pass
+            # if self.midi_config:
+                # last_notes = self.midi_config.note_filter.get_note_queue()
+                # if last_notes:
+                #     pass
                     # self.fretboard.show_pattern()
         else:
             self.fretboard.midi_note_off(midi_note, channel)
