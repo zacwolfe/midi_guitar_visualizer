@@ -965,11 +965,11 @@ class ScaleNote(Widget):
         else:
             if self._should_show():
                 self._update_color()
-            else:
                 self.show()
 
     def _should_show(self):
-        return (self.chord_degree is not None and self.chord_degree > 0) or (self.scale_degree is not None and self.scale_degree >= 0)
+        return self.is_being_played or (self.chord_degree is not None and self.chord_degree > 0) or (
+                    self.scale_degree is not None and self.scale_degree >= 0)
 
     def _get_current_color(self):
 
@@ -1028,17 +1028,20 @@ class ScaleNote(Widget):
             self.remove_widget(self.label)
 
     def hide(self):
-        self.fretboard.remove_widget(self)
+        if not self.being_played:
+            self.fretboard.remove_widget(self)
+
         # only actually hide if note isn't being played
         # if not self.being_played:
             # self.color.a = 0.0
             # self.ellipse.size = (0,0)
 
-        # self.highlighted = False
-        # self.common_tone = False
-        # self.scale_degree = None
-        # self.chord_degree = None
-        # self.label.text = ''
+        self.highlighted = False
+        self.common_tone = False
+        self.scale_degree = None
+        self.chord_degree = None
+        self.chord_label = None
+        self.update_label()
 
 
     def show(self):
