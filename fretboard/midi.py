@@ -11,6 +11,7 @@ import queue
 from .midi_player import PLAYER_STATE_PLAYING, PLAYER_STATE_STOPPED, PLAYER_STATE_PAUSED
 from util.alert_dialog import Alert
 from .utils import empty_queue
+from .midi_input import MidiInput
 
 from mido.midifiles.tracks import _to_abstime, _to_reltime, fix_end_of_track, MidiTrack
 from mido.midifiles.units import tick2second, second2tick
@@ -40,12 +41,11 @@ class Midi(EventDispatcher):
     def __init__(self, midi_player, note_filter, default_port, midi_callback, default_output_port, midi_output_callback=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.midi_player = midi_player
+        self.midi_input =  MidiInput()
         self.note_filter = note_filter
         self.default_port = default_port
         self.midi_callback = midi_callback
         self.midi_output_callback = midi_output_callback
-        self.output_port = None
-        self.input_port = None
         self.midi_file_path = None
         self.midi_file = None
         self.player_state = PLAYER_STATE_STOPPED
@@ -53,20 +53,21 @@ class Midi(EventDispatcher):
         self.player_callback = None
         self.player_progress_callback = None
         self.set_default_output_port(default_output_port)
+        self.set_default_input_port(default_port)
         self.preload_chord_amt = 1.0
         self.common_chord_tone_amt = 2.0
+        self.start_midi_input()
 
     def dismiss(self):
         App.get_running_app().open_settings()
 
     def open_input(self):
-        try:
-            self.input_port = mido.open_input(name=self.default_port, callback=self.midi_message_received)
-            print("input midi port connected! {}".format(self.default_port))
-        except IOError:
+        if self.default_port not in get_midi_ports():
+
             Alert(title="Oops",
-                  text='Could not load midi port {}. \nPlease select a valid midi input port'.format(self.default_port),
+                  text='Could not load input midi port {}. \nPlease select a valid midi inpput port'.format(self.default_port),
                   on_dismiss_callback=lambda *args: self.dismiss())
+
 
     def open_output(self):
         if self.default_output_port not in get_midi_output_ports():
@@ -76,6 +77,7 @@ class Midi(EventDispatcher):
                   on_dismiss_callback=lambda *args: self.dismiss())
 
     def midi_message_received(self, message):
+        # print("m dikly {}".format(message))
         if message.type not in ['note_on', 'note_off']:
             return
 
@@ -85,18 +87,14 @@ class Midi(EventDispatcher):
 
         self.midi_callback(message.note, message.channel, message.type == 'note_on', message.time)
 
-    def shutdown(self):
-        if self.input_port:
-            self.input_port.close()
+    def set_default_input_port(self, port, open_port=False):
 
-    def set_default_port(self, port, open_port=False):
-        self.shutdown()
         self.default_port = port
+        self.midi_input.set_input_port_name(port)
         if open_port:
             self.open_input()
 
     def set_default_output_port(self, port, open_port=False):
-        self.shutdown()
         self.default_output_port = port
         self.midi_player.set_output_port_name(port)
         if open_port:
@@ -170,12 +168,36 @@ class Midi(EventDispatcher):
             self.meta_poll_trigger = None
             empty_queue(self.midi_player.midi_metadata_queue)
 
+    def poll_midi_input(self, *args):
+        while True:
+            try:
+                msg = self.midi_input.midi_input_queue.get_nowait()
+                # print("got somethi {}".format(msg))
+                if isinstance(msg, Exception):
+                    Alert(title="Oops",
+                          text='Could not load input midi port {}. \nPlease select a valid midi inpput port. Exception: {}'.format(
+                              self.default_port, str(msg)),
+                          on_dismiss_callback=lambda *args: self.dismiss())
+                    break
 
+                else:
+                    self.midi_message_received(msg)
+            except queue.Empty:
+                break
+
+        if self.input_poll_trigger:
+            self.input_poll_trigger()
+
+    def shutdown(self):
+        self.midi_input.stop()
 
     def stop(self):
         print("we stoppin!!!!")
         self.player_state = PLAYER_STATE_STOPPED
 
+    def start_midi_input(self):
+        self.input_poll_trigger = Clock.create_trigger_free(self.poll_midi_input, 1 / 60)
+        self.input_poll_trigger()
 
     def play(self):
         if self.player_state == PLAYER_STATE_PLAYING:

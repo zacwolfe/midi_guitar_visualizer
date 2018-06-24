@@ -46,7 +46,8 @@ class FretboardNavigator(App):
         return app_window
 
     def on_stop(self):
-        self.midi_player.stop()
+        self.root.shutdown_midi()
+
         self.profile.disable()
         self.profile.dump_stats('fretboard.profile')
         p = pstats.Stats('fretboard.profile')

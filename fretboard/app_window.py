@@ -68,9 +68,15 @@ class AppWindow(BoxLayout):
         self.midi_config.open_output()
 
     def reload_midi(self):
-        self.midi_config.set_default_port(self.midi_port, open_port=True)
+        self.midi_config.set_default_input_port(self.midi_port, open_port=True)
         self.midi_config.set_default_output_port(self.midi_output_port, open_port=True)
 
+    def shutdown_midi(self):
+        if self.midi_player:
+            self.midi_player.stop()
+
+        if self.midi_config:
+            self.midi_config.shutdown()
     def reload_scales(self):
         self.scale_config.load_scales()
 

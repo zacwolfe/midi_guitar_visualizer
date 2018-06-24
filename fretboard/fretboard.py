@@ -335,13 +335,13 @@ class Fretboard(RelativeLayout):
         self.midi_trigger()
 
     def midi_note_on(self, midi_note, channel, time=None):
-        self.midi_queue.put_nowait(('on', midi_note, channel, time))
+        # self.midi_queue.put_nowait(('on', midi_note, channel, time))
 
-        # self.note_on(*self.tuning.get_string_and_fret(midi_note, channel), time)
+        self.note_on(*self.tuning.get_string_and_fret(midi_note, channel), time)
 
     def midi_note_off(self, midi_note, channel):
-        self.midi_queue.put_nowait(('off', midi_note, channel, None))
-        # self.note_off(*self.tuning.get_string_and_fret(midi_note, channel))
+        # self.midi_queue.put_nowait(('off', midi_note, channel, None))
+        self.note_off(*self.tuning.get_string_and_fret(midi_note, channel))
 
     # @mainthread_interrupt
     def note_on(self, string_num, fret_num, time=None):
@@ -968,8 +968,7 @@ class ScaleNote(Widget):
                 self.show()
 
     def _should_show(self):
-        return self.is_being_played or (self.chord_degree is not None and self.chord_degree > 0) or (
-                    self.scale_degree is not None and self.scale_degree >= 0)
+        return self.is_being_played or (self.chord_degree is not None and self.chord_degree > 0) or (self.scale_degree is not None and self.scale_degree >= 0)
 
     def _get_current_color(self):
 
