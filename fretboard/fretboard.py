@@ -14,6 +14,7 @@ import kivy.utils as utils
 from kivy.properties import ConfigParserProperty
 from kivy.clock import Clock
 import collections
+import functools
 from queue import Queue, Empty, Full
 
 
@@ -305,7 +306,7 @@ class Fretboard(RelativeLayout):
 
             last_x = fret_x
 
-
+    @functools.lru_cache(maxsize=256)
     def get_finger_location(self, string_num, fret_num):
         fret_x = self.get_fret_x(fret_num)
         prev_fret_x = self.get_fret_x(fret_num - 1)
@@ -457,6 +458,7 @@ class Fretboard(RelativeLayout):
 
 
     def redraw_fretboard(self, *args):
+        self.get_finger_location.cache_clear()
         self.rect.pos = self.pos
         self.rect.size = self.size
 
