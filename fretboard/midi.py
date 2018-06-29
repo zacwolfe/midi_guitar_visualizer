@@ -196,7 +196,7 @@ class Midi(EventDispatcher):
         self.player_state = PLAYER_STATE_STOPPED
 
     def start_midi_input(self):
-        self.input_poll_trigger = Clock.create_trigger_free(self.poll_midi_input, 0)
+        self.input_poll_trigger = Clock.create_trigger(self.poll_midi_input, 1/60)
         # self.input_poll_trigger = Clock.create_trigger(self.poll_midi_input, 0)
         self.input_poll_trigger()
 

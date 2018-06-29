@@ -68,8 +68,9 @@ class MidiInput(object):
 
                 if input_port:
                     # TODO: it sucks that there isn't a timeout allowed here!!
-                    msg = input_port.receive()
-                    midi_input_queue.put_nowait(msg)
+                    msg = input_port.receive(timeout=5)
+                    if msg:
+                        midi_input_queue.put_nowait(msg)
 
 
 
