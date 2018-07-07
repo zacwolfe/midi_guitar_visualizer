@@ -89,14 +89,15 @@ repeatend
         self.mma_textarea.background_disabled_normal = ''
 
         checkbox_size_hint = 0.2
+        font_size = '22sp'
         self.chord_label = Label(halign='right',text='chord:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.5)
-        self.chord_input = TextInput(multiline=False, font_size='26sp')
+        self.chord_input = TextInput(multiline=False, font_size=font_size)
         self.scale_type_label = Label(halign='right',text='scale type:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.6)
-        self.scale_type_input = TextInput(multiline=False, font_size='26sp', size_hint_x=1.5)
+        self.scale_type_input = TextInput(multiline=False, font_size=font_size, size_hint_x=1.5)
         self.scale_key_label = Label(halign='right', text='scale key:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.6)
-        self.scale_key_input = TextInput(multiline=False, font_size='26sp', size_hint_x=0.5)
+        self.scale_key_input = TextInput(multiline=False, font_size=font_size, size_hint_x=0.5)
         self.scale_degree_label = Label(halign='right', text='scale degree:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.7)
-        self.scale_degree_input = TextInput(multiline=False, font_size='26sp', size_hint_x=0.5)
+        self.scale_degree_input = TextInput(multiline=False, font_size=font_size, size_hint_x=0.5)
         self.show_scales_label = Label(halign='right', text='scales:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.5)
         self.show_scales_checkbox = CheckBox(active=True, size_hint_x=checkbox_size_hint)
         self.show_scales_checkbox.bind(active=self.show_scales)
