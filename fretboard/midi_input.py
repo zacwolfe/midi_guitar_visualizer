@@ -1,12 +1,9 @@
-from multiprocessing import Value, get_context
+from multiprocessing import get_context
 import mido
 from time import sleep
 import ctypes
-import re
 import queue
-from .utils import empty_queue
-import functools
-from constants import current_time_millis
+from kivy.core.window import Window
 
 INPUT_STATE_INACTIVE = 0
 INPUT_STATE_ACTIVE = 1
@@ -55,6 +52,7 @@ class MidiInput(object):
                 current_note -= 1
 
     def do_loop(self, midi_input_queue, input_port_name_queue):
+        Window.hide()
         try:
             input_port = None
 

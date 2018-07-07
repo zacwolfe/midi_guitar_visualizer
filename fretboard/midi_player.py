@@ -1,4 +1,4 @@
-from multiprocessing import Value, get_context
+from multiprocessing import get_context
 import mido
 from time import sleep
 import ctypes
@@ -6,6 +6,7 @@ import re
 import queue
 from .utils import empty_queue
 import functools
+from kivy.core.window import Window
 
 PLAYER_STATE_STOPPED = 0
 PLAYER_STATE_PLAYING = 1
@@ -32,6 +33,7 @@ class MidiPlayer(object):
 
 
     def do_loop(self, input_queue, midi_metadata_queue, player_state, output_port_queue):
+        Window.hide()
         try:
             output_port = None
 
