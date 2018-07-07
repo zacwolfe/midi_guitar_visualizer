@@ -27,8 +27,8 @@ class FretboardNavigator(App):
         self.settings_cls = SettingsWithSidebar
         self.midi_player = MidiPlayer()
         Config.set('kivy', 'KIVY_CLOCK', 'free_all')
-
-        Config.set('modules', 'fb_monitor', '')
+        Config.set('modules', 'monitor', '')
+        # Config.set('modules', 'fb_monitor', '')
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
         Config.write()
         app_window = AppWindow(self.midi_player)

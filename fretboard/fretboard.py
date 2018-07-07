@@ -563,7 +563,7 @@ class Fretboard(RelativeLayout):
         # self.note_on(5,3, time)
         # self.note_on(5,4, time)
 
-        self.show_chord_tones('G#M7', 'major', 'G#', 0)
+        # self.show_chord_tones('G#M7', 'major', 'G#', 0)
         pass
 
     def remove_some_stuff(self):
@@ -641,10 +641,10 @@ class Fretboard(RelativeLayout):
         if self.current_harmonic_settings == harmonic_setting:
             return
 
-        chord_tone = m[1]
-        if m[2]:
-            chord_tone += m[2]
-        chord_type = m[3]
+        chord_tone = m.group(1)
+        if m.group(2):
+            chord_tone += m.group(2)
+        chord_type = m.group(3)
 
         mappings = self.pattern_mapper.get_fret_mapping(chord_tone, chord_type, scale_name, scale_key, scale_degree)
         # mappings = self.tuning.get_fret_mapping(chord_tone, chord_spec, scale, scale_key, scale_degree)

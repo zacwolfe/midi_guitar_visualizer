@@ -281,7 +281,7 @@ repeatend
         with open(self.tmp_mma_outfile, "w") as file:
             file.write(txt)
         try:
-            subprocess.run("{} -f {} {}".format(self.mma_path, self.tmp_mid_outfile, self.tmp_mma_outfile), shell=True, check=True)
+            subprocess.run("python {} -f {} {}".format(self.mma_path, self.tmp_mid_outfile, self.tmp_mma_outfile), shell=True, check=True)
             self.build_lines_map(txt)
             self.midi_config.set_midi_file(self.tmp_mid_outfile, self.current_tempo)
             self.needs_reload = False
