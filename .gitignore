@@ -123,3 +123,5 @@ venv.bak/
 # My hump my hump
 /mma/tmp/*
 /fretboard.profile
+mma_main
+mido

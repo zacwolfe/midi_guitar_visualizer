@@ -1,0 +1,161 @@
+From 87a441bf0a279401f66e0d9b0c43627273984b84 Mon Sep 17 00:00:00 2001
+From: Zac Wolfe <zacw@safisystems.com>
+Date: Sat, 7 Jul 2018 13:18:02 -0700
+Subject: [PATCH] add support for chords=BOTH
+
+---
+ .gitignore   |  2 ++
+ MMA/lyric.py | 76 +++++++++++++++++++++++++++++++++++++++++++++++++-----------
+ 2 files changed, 64 insertions(+), 14 deletions(-)
+
+diff --git a/.gitignore b/.gitignore
+index 38192dd..8c9ed6a 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,3 +1,5 @@
+ .mmaDB
+ *.pyc
+ **/*.backup.*
++.idea
++
+diff --git a/MMA/lyric.py b/MMA/lyric.py
+index 24f0bf6..c36bbc5 100644
+--- a/MMA/lyric.py
++++ b/MMA/lyric.py
+@@ -158,7 +158,10 @@ class Lyric:
+                     self.dupchords = 0
+                     if gbl.debug:
+                         print("Lyric: Chords are NOT duplicated as lyrics.")
+-
++                elif v in ('0', 'BOTH'):
++                    self.dupchords = 2
++                    if gbl.debug:
++                        print("Lyric: Chords AND lyrics.")
+                 else:
+                     error("Lyric: CHORDS expecting 'ON' or 'OFF', not %s'" % v)
+ 
+@@ -301,6 +304,8 @@ class Lyric:
+ 
+         if rpt > 1:
+             if self.dupchords:
++                if ln == 'z':
++                    return (ln, [])
+                 error("Chord to lyrics not supported with bar repeat")
+             elif a or b:
+                 error("Bars with both repeat count and lyrics are not permitted")
+@@ -311,8 +316,14 @@ class Lyric:
+             insert as lyric. This permits illegal chord lines, but they will
+             be caught by the parser.
+         """
++        saved_lyrics = None
++
+ 
+         if self.dupchords:
++
++            if self.dupchords == 2:
++                saved_lyrics = list(lyrics)
++
+             ly = []
+             for v in ln.split():   # do each chord symbol or '/' mark
+ 
+@@ -353,6 +364,8 @@ class Lyric:
+             i = gbl.QperBar - len(ly)
+             if i > 0:
+                 ly.extend(['/'] * i)
++
++            print("my pisser ly is {} of len {}".format(ly, len(ly)))
+             lyrics.insert(0, ' '.join(ly) + '\\r')
+ 
+         v = self.versenum
+@@ -368,31 +381,36 @@ class Lyric:
+         if not len(lyrics):
+             return (ln, [])
+ 
+-        lyrics = lyrics.replace('\\r', ' \\r ')
+-        lyrics = lyrics.replace('\\n', ' \\n ')
+-        lyrics = lyrics.replace('     ', ' ')
+ 
+-        if self.karmode:
+-            lyrics = lyrics.replace('\-', chr(1))
+-            lyrics = lyrics.replace('-', chr(0)+' ')
+ 
+-        if self.barsplit:
+-            lyrics = [lyrics]
++        if saved_lyrics:
++            saved_lyrics = saved_lyrics[0]
++            saved_lyrics = self.normalize_lyrics(saved_lyrics)
++            lyrics = self.normalize_lyrics(lyrics)
++
++            lyrics = self.combine_lyrics(saved_lyrics, lyrics, gbl.lineno)
++            lyrics = self.parse_lyrics(lyrics)
+         else:
+-            lyrics = lyrics.split()
++            lyrics = self.normalize_lyrics(lyrics)
++            if self.dupchords == 2:
++                lyrics = self.add_line_number(lyrics, gbl.lineno)
++            lyrics = self.parse_lyrics(lyrics)
+ 
++
++        return (ln, lyrics)
++
++    def parse_lyrics(self, lyrics):
+         beat = 0
+         bstep = gbl.QperBar / float(len(lyrics))
+-
+         for t, a in enumerate(lyrics):
+             a, b = pextract(a, '<', '>', onlyone=True)
+ 
+             if b and b[0]:
+                 beat = stof(b[0], "Expecting value in <%s> in lyric" % b)
+-                if beat < 1 or beat > gbl.QperBar+1:
++                if beat < 1 or beat > gbl.QperBar + 1:
+                     error("Offset in lyric <> must be 1 to %s" % gbl.QperBar)
+                 beat -= 1
+-                bstep = (gbl.QperBar-beat)/float((len(lyrics)-t))
++                bstep = (gbl.QperBar - beat) / float((len(lyrics) - t))
+ 
+             a = a.replace('\\r', '\r')
+             a = a.replace('\\n', '\n')
+@@ -412,8 +430,38 @@ class Lyric:
+                         gbl.mtrks[0].addLyric(p, a)
+ 
+             beat += bstep
++        return lyrics
+ 
+-        return (ln, lyrics)
++    def normalize_lyrics(self, lyrics):
++        lyrics = lyrics.replace('\\r', ' \\r ')
++        lyrics = lyrics.replace('\\n', ' \\n ')
++        lyrics = lyrics.replace('     ', ' ')
++        if self.karmode:
++            lyrics = lyrics.replace('\-', chr(1))
++            lyrics = lyrics.replace('-', chr(0) + ' ')
++        if self.barsplit:
++            lyrics = [lyrics]
++        else:
++            lyrics = lyrics.split()
++        return lyrics
++
++    def combine_lyrics(self, saved_lyrics, lyrics, line_num):
++        result = list()
++        for i, l in enumerate(saved_lyrics):
++            if i >= len(lyrics):
++                result.append(l.strip())
++            elif i == 0:
++                result.append(lyrics[i].strip() + ' '+ l.strip() + '|' + str(line_num) +'|')
++            else:
++                result.append(lyrics[i].strip() + ' '+ l.strip())
++
++        return result
++
++    def add_line_number(self, lyrics, line_num):
++        if lyrics:
++            lyrics[0] = lyrics[0].strip() + ' |'+str(line_num)+'|'
++
++        return lyrics
+ 
+ 
+ # Create a single instance of the Lyric Class.
+-- 
+2.15.2 (Apple Git-101.1)
+

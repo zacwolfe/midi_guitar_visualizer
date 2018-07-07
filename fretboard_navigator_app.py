@@ -27,6 +27,7 @@ class FretboardNavigator(App):
         self.settings_cls = SettingsWithSidebar
         self.midi_player = MidiPlayer()
         Config.set('kivy', 'KIVY_CLOCK', 'free_all')
+
         Config.set('modules', 'fb_monitor', '')
         Config.set('input', 'mouse', 'mouse,disable_multitouch')
         Config.write()
@@ -34,7 +35,8 @@ class FretboardNavigator(App):
         # fretb = Fretboard()
         def my_callback():
             app_window.fretboard.add_some_stuff()
-            Clock.schedule_once(lambda dt:my_callback2(), 3 )
+            # app_window.start_shred_simulation()
+            Clock.schedule_once(lambda dt:my_callback2(), 10 )
 
         def my_callback2():
             # app_window.fretboard.remove_some_stuff()
@@ -43,7 +45,14 @@ class FretboardNavigator(App):
 
         Clock.schedule_once(lambda dt: my_callback(), 3)
 
+
         return app_window
+
+    def on_start(self):
+        print("I'm resumed")
+        self.root.init_midi()
+        self.profile = cProfile.Profile()
+        self.profile.enable()
 
     def on_stop(self):
         self.root.shutdown_midi()
@@ -76,11 +85,7 @@ class FretboardNavigator(App):
         elif section == 'scales':
             self.root.reload_scales()
 
-    def on_start(self):
-        print("I'm resumed")
-        self.root.init_midi()
-        self.profile = cProfile.Profile()
-        self.profile.enable()
+
 
 
 if __name__ == '__main__':

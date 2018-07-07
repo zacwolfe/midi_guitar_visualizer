@@ -563,7 +563,7 @@ class Fretboard(RelativeLayout):
         # self.note_on(5,3, time)
         # self.note_on(5,4, time)
 
-        # self.show_chord_tones('G#M7', 'major', 'G#', 0)
+        self.show_chord_tones('G#M7', 'major', 'G#', 0)
         pass
 
     def remove_some_stuff(self):

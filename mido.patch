@@ -1,0 +1,157 @@
+From 0fab44fc3e397d64fe5dd8f7cc602f2da847219f Mon Sep 17 00:00:00 2001
+From: Zac Wolfe <zacw@safisystems.com>
+Date: Sat, 7 Jul 2018 13:25:05 -0700
+Subject: [PATCH] add optional timeout param to input.receive()
+
+---
+ mido/__about__.py              |  2 +-
+ mido/backends/_parser_queue.py | 19 +++++++++++++++----
+ mido/backends/amidi.py         |  2 +-
+ mido/backends/rtmidi.py        |  4 ++--
+ mido/ports.py                  | 10 ++++++++--
+ tests/test_ports.py            |  7 +++++++
+ 6 files changed, 34 insertions(+), 10 deletions(-)
+
+diff --git a/mido/__about__.py b/mido/__about__.py
+index 054eb8b..42f3ca9 100644
+--- a/mido/__about__.py
++++ b/mido/__about__.py
+@@ -1,4 +1,4 @@
+-__version__ = '1.2.8'
++__version__ = '1.2.9'
+ __author__ = 'Ole Martin Bjorndalen'
+ __author_email__ = 'ombdalen@gmail.com'
+ __url__ = 'https://mido.readthedocs.io/'
+diff --git a/mido/backends/_parser_queue.py b/mido/backends/_parser_queue.py
+index 2d8410b..59c0ef0 100644
+--- a/mido/backends/_parser_queue.py
++++ b/mido/backends/_parser_queue.py
+@@ -41,7 +41,7 @@ class ParserQueue:
+             for msg in self._parser:
+                 self.put(msg)
+ 
+-    def _get_py2(self):
++    def _get_py2(self, timeout=None):
+         # In Python 2 queue.get() doesn't respond to CTRL-C. A workaroud is
+         # to call queue.get(timeout=100) (very high timeout) in a loop, but all
+         # that does is poll with a timeout of 50 milliseconds. This results in
+@@ -50,20 +50,31 @@ class ParserQueue:
+         # It's better to do our own polling with a shorter sleep time.
+         #
+         # See Issue #49 and https://bugs.python.org/issue8844
++
++        has_timeout = False if timeout is None else True
++        total_time = 0
+         sleep_time = ports.get_sleep_time()
+         while True:
+             try:
+                 return self._queue.get_nowait()
+             except queue.Empty:
+                 time.sleep(sleep_time)
++                if has_timeout:
++                    total_time += sleep_time
++                    if total_time > timeout:
++                        return None
++
+                 continue
+ 
+     # TODO: add timeout?
+-    def get(self):
++    def get(self, timeout=None):
+         if PY2:
+-            return self._get_py2()
++            return self._get_py2(timeout=timeout)
+         else:
+-            return self._queue.get()
++            try:
++                return self._queue.get(timeout=timeout)
++            except queue.Empty:
++                return None
+ 
+     def poll(self):
+         try:
+diff --git a/mido/backends/amidi.py b/mido/backends/amidi.py
+index 67caa09..571afcf 100644
+--- a/mido/backends/amidi.py
++++ b/mido/backends/amidi.py
+@@ -72,7 +72,7 @@ class Input(PortMethods, InputMethods):
+             # The first line is sometimes blank.
+             return None
+ 
+-    def receive(self, block=True):
++    def receive(self, block=True, timeout=None):
+         if not block:
+             return self.poll()
+ 
+diff --git a/mido/backends/rtmidi.py b/mido/backends/rtmidi.py
+index 9fb5bbd..cd1d77c 100644
+--- a/mido/backends/rtmidi.py
++++ b/mido/backends/rtmidi.py
+@@ -131,9 +131,9 @@ class Input(PortCommon, ports.BaseInput):
+ 
+     # We override receive() and poll() instead of _receive() and
+     # _poll() to bypass locking.
+-    def receive(self, block=True):
++    def receive(self, block=True, timeout=None):
+         if block:
+-            return self._queue.get()
++            return self._queue.get(timeout)
+         else:
+             return self._queue.poll()
+ 
+diff --git a/mido/ports.py b/mido/ports.py
+index d97d8c3..c2173ec 100644
+--- a/mido/ports.py
++++ b/mido/ports.py
+@@ -178,7 +178,7 @@ class BaseInput(BasePort):
+             else:
+                 yield msg
+ 
+-    def receive(self, block=True):
++    def receive(self, block=True, timeout=None):
+         """Return the next message.
+ 
+         This will block until a message arrives.
+@@ -207,6 +207,8 @@ class BaseInput(BasePort):
+             else:
+                 return None
+ 
++        total_time = 0
++        has_timeout = False if timeout is None else True
+         while True:
+             with self._lock:
+                 msg = self._receive(block=block)
+@@ -220,7 +222,11 @@ class BaseInput(BasePort):
+                 elif self.closed:
+                     raise IOError('port closed during receive()')
+ 
+-            sleep()
++            time.sleep(_sleep_time)
++            if has_timeout:
++                total_time += _sleep_time
++                if total_time > timeout:
++                    return None
+ 
+     def poll(self):
+         """Receive the next pending message or None
+diff --git a/tests/test_ports.py b/tests/test_ports.py
+index d1e7817..8a7ae62 100644
+--- a/tests/test_ports.py
++++ b/tests/test_ports.py
+@@ -51,6 +51,13 @@ class TestIOPort:
+     def test_mido_port_non_blocking_recv(self, port):
+         assert port.receive(block=False) is None
+ 
++    def test_mido_port_timeout_recv(self, port):
++        assert port.receive(block=True, timeout=0.001) is None
++        message = Message('note_on')
++        port.send(message)
++        assert port.receive(block=True, timeout=100) is not None
++        assert port.receive(block=True, timeout=0.001) is None
++
+ 
+ def test_close_inside_iteration():
+     # This type of port can close when it runs out of messages.
+-- 
+2.15.2 (Apple Git-101.1)
+

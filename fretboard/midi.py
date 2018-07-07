@@ -169,7 +169,7 @@ class Midi(EventDispatcher):
             empty_queue(self.midi_player.midi_metadata_queue)
 
     def poll_midi_input(self, *args):
-        while True:
+        while self.input_poll_trigger is not None:
             try:
                 msg = self.midi_input.midi_input_queue.get_nowait()
                 # print("got somethi {}".format(msg))
@@ -189,15 +189,17 @@ class Midi(EventDispatcher):
             self.input_poll_trigger()
 
     def shutdown(self):
+        self.input_poll_trigger = None
         self.midi_input.stop()
+
 
     def stop(self):
         print("we stoppin!!!!")
         self.player_state = PLAYER_STATE_STOPPED
 
     def start_midi_input(self):
-        self.input_poll_trigger = Clock.create_trigger(self.poll_midi_input, 1/60)
-        # self.input_poll_trigger = Clock.create_trigger(self.poll_midi_input, 0)
+        # self.input_poll_trigger = Clock.create_trigger(self.poll_midi_input, 1/60)
+        self.input_poll_trigger = Clock.create_trigger_free(self.poll_midi_input, 1/120)
         self.input_poll_trigger()
 
     def play(self):
@@ -214,7 +216,7 @@ class Midi(EventDispatcher):
                     self.midi_player.input_queue.put(msg, block=True, timeout=2)
                 self.midi_player.input_queue.put(mido.Message('stop'), block=True, timeout=2)
 
-                self.meta_poll_trigger = Clock.create_trigger(self.poll_midi_metadata, 1/60)
+                self.meta_poll_trigger = Clock.create_trigger(self.poll_midi_metadata, 1/30)
                 self.meta_poll_trigger()
 
             self.player_state = PLAYER_STATE_PLAYING

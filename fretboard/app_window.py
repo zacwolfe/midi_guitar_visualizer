@@ -10,6 +10,11 @@ from .player_panel import PlayerPanel
 from scales.scales import Scales, Chords, Patterns
 from kivy.config import ConfigParser
 from kivy.uix.boxlayout import BoxLayout
+
+
+import threading
+from constants import current_time_millis
+from time import sleep
 class AppWindow(BoxLayout):
 
     height_ratio = ConfigParserProperty(0.0, 'window', 'height_ratio', 'app', val_type=float)
@@ -80,10 +85,12 @@ class AppWindow(BoxLayout):
     def reload_scales(self):
         self.scale_config.load_scales()
 
-
+    # import time
+    # last_time = time.time()*1000.0
     def midi_message_received(self, midi_note, channel, on, time=None):
-        # print('midi!!! {}'.format(message))
+
         if on:
+            # print('midi!!! ({}, {}, {}, {})'.format(midi_note, channel, on, time - self.last_time))
             self.fretboard.midi_note_on(midi_note, channel, time)
             # if self.midi_config:
                 # last_notes = self.midi_config.note_filter.get_note_queue()

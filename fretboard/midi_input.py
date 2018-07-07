@@ -6,6 +6,7 @@ import re
 import queue
 from .utils import empty_queue
 import functools
+from constants import current_time_millis
 
 INPUT_STATE_INACTIVE = 0
 INPUT_STATE_ACTIVE = 1
@@ -15,7 +16,7 @@ class MidiInput(object):
     ctx = get_context('spawn')
     input_port_name_queue = ctx.Queue()
     # input_queue = ctx.Queue()
-    midi_input_queue = ctx.Queue()
+    midi_input_queue = ctx.Queue(maxsize=1000)
 
     def __init__(self):
 
@@ -23,8 +24,35 @@ class MidiInput(object):
         self.input_process = self.ctx.Process(name="midi_input", target=self.do_loop,
                                               args=(self.midi_input_queue, self.input_port_name_queue))
         self.input_process.start()
-        sleep(2)
 
+        # self.shred_process = self.ctx.Process(name="shred", target=self._do_shred,
+        #                                       args=(self.midi_input_queue,))
+        # self.shred_process.start()
+        # sleep(2)
+
+
+
+    def _do_shred(self, midi_input_queue):
+        ascending=True
+        current_note=0
+        notes_up = [(45,5), (47,5), (48,5), (49, 5), (51,4), (52,4),(54,4), (56, 3), (57, 3), (59,3), (61, 2), (62, 2), (63, 2), (64, 2), (66, 1), (68, 1), (69, 1), (71, 0), (73, 0), (74, 0)]
+
+        while True:
+            if current_note >= len(notes_up):
+                ascending = False
+                current_note = len(notes_up) - 1
+            elif current_note < 0:
+                ascending = True
+                current_note = 0
+
+            note = notes_up[current_note]
+            midi_input_queue.put_nowait(mido.Message('note_on', note=note[0], channel=note[1], velocity=100, time=0))
+            sleep(0.02)
+            midi_input_queue.put_nowait(mido.Message('note_off', note=note[0], channel=note[1], velocity=100, time=200))
+            if ascending:
+                current_note += 1
+            else:
+                current_note -= 1
 
     def do_loop(self, midi_input_queue, input_port_name_queue):
         try:
@@ -85,6 +113,7 @@ class MidiInput(object):
 
         if self.input_process:
             self.input_process.join()
+
 
     def midi_message_received(self, message):
         print("putting {}".format(message))
