@@ -601,10 +601,10 @@ class Fretboard(RelativeLayout):
         else:
             self.current_harmonic_settings = harmonic_setting
 
-        chord_tone = m[1]
-        if m[2]:
-            chord_tone += m[2]
-        chord_type = m[3]
+        chord_tone = m.group(1)
+        if m.group(2):
+            chord_tone += m.group(2)
+        chord_type = m.group(3)
 
         self.current_harmonic_mapping_cachekey = (chord_tone, chord_type, scale_name, scale_key, scale_degree)
 
