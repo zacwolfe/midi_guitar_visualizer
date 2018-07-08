@@ -8,13 +8,10 @@ from .midi import Midi, NoteFilter
 from .pattern_mapper import P4TuningPatternMatcher, StandardTuningPatternMatcher
 from .player_panel import PlayerPanel
 from scales.scales import Scales, Chords, Patterns
-from kivy.config import ConfigParser
+from kivy.config import ConfigParser, Config
 from kivy.uix.boxlayout import BoxLayout
+from kivy.app import App
 
-
-import threading
-from constants import current_time_millis
-from time import sleep
 class AppWindow(BoxLayout):
 
     height_ratio = ConfigParserProperty(0.0, 'window', 'height_ratio', 'app', val_type=float)
@@ -67,6 +64,11 @@ class AppWindow(BoxLayout):
     def size_changed(self, *args):
         self.rect.pos = self.pos
         self.rect.size = self.size
+        print("pos is {}, size is {}".format(self.pos, self.size))
+        App.get_running_app().config.set('window', 'initial_screen_loc_x', self.pos[0])
+        App.get_running_app().config.set('window', 'initial_screen_loc_y', self.pos[1])
+        App.get_running_app().config.set('window', 'initial_width', self.size[0] )
+        App.get_running_app().config.set('window', 'height_ratio', self.size[1]/self.size[0] )
 
     def init_midi(self):
         self.midi_config.open_input()
