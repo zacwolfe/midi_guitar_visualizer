@@ -635,12 +635,15 @@ class Fretboard(RelativeLayout):
 
         m = parse_chord(chord)
         if not m:
+            print("FUUUUUKK this isn't a chord {}".format(chord))
             return
 
         harmonic_setting = (chord, scale_name, scale_key, scale_degree)
-        if self.current_harmonic_settings == harmonic_setting:
+        if self.current_harmonic_settings and self.current_harmonic_settings[0] == harmonic_setting[0]:
+            print("skipping same chord {}".format(harmonic_setting[0]))
             return
 
+        print("current settings is {} and gnu {}".format(self.current_harmonic_settings, harmonic_setting))
         chord_tone = m.group(1)
         if m.group(2):
             chord_tone += m.group(2)
@@ -725,7 +728,7 @@ class Fretboard(RelativeLayout):
             pos_hint = {'center_x': loc[0]/self.width, 'center_y': loc[1]/self.height}
             size_hint = (self.finger_width_ratio, (self.finger_width_ratio * self.width / self.height))
             # print('pos_hint is {}'.format(pos_hint))
-            print("making new scale note {},{}".format(string_num, fret_num))
+            # print("making new scale note {},{}".format(string_num, fret_num))
             note = ScaleNote(self, string_num, fret_num, chord_label, chord_degree, scale_degree, True if is_playing else False, pos_hint=pos_hint, size_hint=size_hint)
             self.scale_notes[note_id] = note
             self.add_widget(note)

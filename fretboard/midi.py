@@ -119,7 +119,7 @@ class Midi(EventDispatcher):
         aux_msgs = list()
         print("Preload amt {} and common tone {}".format(self.preload_chord_amt, self.common_chord_tone_amt))
         for msg in messages:
-            if (self.preload_chord_amt > 0.0 or self.preload_chord_amt > 0.0) and msg.type == 'lyrics' and msg.time >= ticks_per_beat * self.preload_chord_amt:  # push lyrics back a bit
+            if (self.preload_chord_amt > 0.0 or self.common_chord_tone_amt > 0.0) and msg.type == 'lyrics' and msg.time >= ticks_per_beat * self.preload_chord_amt:  # push lyrics back a bit
                 if self.common_chord_tone_amt > 0.0:
                     m = MetaMessage(type='marker', time = msg.time -  ticks_per_beat*self.common_chord_tone_amt, text=msg.text)
                     aux_msgs.append(m)
@@ -196,6 +196,7 @@ class Midi(EventDispatcher):
     def stop(self):
         print("we stoppin!!!!")
         self.player_state = PLAYER_STATE_STOPPED
+        empty_queue(self.midi_player.input_queue)
 
     def start_midi_input(self):
         # self.input_poll_trigger = Clock.create_trigger(self.poll_midi_input, 1/60)

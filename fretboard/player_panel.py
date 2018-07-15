@@ -31,6 +31,7 @@ class PlayerPanel(BoxLayout):
     player_state = PLAYER_STATE_STOPPED
     lines_map = dict()
     current_tempo = 0
+    last_chord = None
     initial_script = '''
 // Sample tutorial file
 // Fella Bird, try 2
@@ -332,7 +333,8 @@ repeatend
             scale_key = None
 
         if pre_chord:
-            self.fretboard.show_common_chord_tones(self.last_chord if chord == '/' else chord, scale_type, scale_key, scale_degree)
+            if self.last_chord != chord:
+                self.fretboard.show_common_chord_tones(self.last_chord if chord == '/' else chord, scale_type, scale_key, scale_degree)
         else:
 
             if chord == '/':

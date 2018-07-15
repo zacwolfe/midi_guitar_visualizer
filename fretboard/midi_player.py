@@ -69,6 +69,7 @@ class MidiPlayer(object):
                                     sleep(0.1)
                                     continue
                                 elif player_state.value == PLAYER_STATE_STOPPED:
+                                    print("emptying and resetting.....")
                                     empty_queue(input_queue)
                                     output_port.reset()
                                     break
@@ -80,6 +81,7 @@ class MidiPlayer(object):
                                     msg = input_queue.get(True, 1)
                                     if msg.type=='stop':
                                         midi_metadata_queue.put_nowait('##done##')
+                                        continue
 
                                     # print("got mussuj {}".format(msg))
                                     sleep(msg.time)
@@ -97,6 +99,7 @@ class MidiPlayer(object):
             print("MidiPlayer exception {}".format(ex))
 
     def set_player_state(self, new_state):
+        print("new player state is {}".format(new_state))
         self.shared_player_state.value = new_state
 
     def set_output_port_name(self, name):
@@ -110,10 +113,14 @@ class MidiPlayer(object):
 
 def play_message(msg, output_queue, output_port):
     if msg.type == 'lyrics' or msg.type == 'marker':
-        # print("got lyric: {}".format(msg))
+        # if msg.type == 'lyrics':
+        print("got {}: {}".format('lyric' if msg.type == 'lyric' else 'marker', msg))
         if msg.text:
             result = parse_metadata(msg.text.strip(), msg.type == 'marker')
-            # print("parsed lyric {}".format(result))
+            if not result['pre_chord']:
+                print("parsed {}: {}".format('lyric' if msg.type == 'lyric' else 'marker', result))
+            # else:
+            #     pass
             if result:
                 output_queue.put_nowait(result)
                 # self.player_progress_callback(**result)
