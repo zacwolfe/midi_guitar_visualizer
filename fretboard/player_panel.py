@@ -11,6 +11,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.graphics import Color, Rectangle
 from kivy.config import ConfigParser
 from util.alert_dialog import Alert
+from util.input_dialog import open_saveas_dialog
 import subprocess
 import os
 import re
@@ -18,6 +19,9 @@ from kivy.properties import StringProperty, NumericProperty
 from . midi import PLAYER_STATE_STOPPED, PLAYER_STATE_PLAYING, PLAYER_STATE_PAUSED
 from kivy.properties import ConfigParserProperty
 from kivy.core.window import Window
+from kivy.uix.dropdown import DropDown
+from shutil import copyfile
+from os.path import basename
 
 TEMPO_REGEX = r'^tempo[\s]+([0-9]+)$'
 TEMPO_PATTERN = re.compile(TEMPO_REGEX, re.IGNORECASE)
@@ -30,8 +34,10 @@ class PlayerPanel(BoxLayout):
     play_button = None
     player_state = PLAYER_STATE_STOPPED
     lines_map = dict()
+    files_list = list()
     current_tempo = 0
     last_chord = None
+    current_filename = None
     initial_script = '''
 // Sample tutorial file
 // Fella Bird, try 2
@@ -62,15 +68,15 @@ repeatend
         self.orientation = 'vertical'
         self.padding = 10
         self.spacing = 10
-        button_panel = BoxLayout(orientation='horizontal', size_hint_y=None, size_hint_x=1)
+        button_panel = BoxLayout(orientation='horizontal', size_hint=(1, 0.08))
         button_panel.center_x = self.center_x
-        self.play_button = Button(id='play',text='play', size=(200, 100), size_hint=(None, None), on_press=self.button_press)
+        self.play_button = Button(id='play',text='play', size=(200, 100), size_hint=(0.1, 1), on_press=self.button_press)
         self.play_label_text = 'play'
         self.curr_line_num = -1
         self.bind(play_label_text=self.update_play_button_text)
         self.bind(curr_line_num=self.line_num_changed)
-        rewind_button = Button(id='rewind', text='rewind', size=(200, 100), size_hint=(None, None), on_press=self.button_press)
-        stop_button = Button(id='stop', text='stop', size=(200, 100), size_hint=(None, None), on_press=self.button_press)
+        rewind_button = Button(id='rewind', text='rewind', size=(200, 100), size_hint=(0.1, 1), on_press=self.button_press)
+        stop_button = Button(id='stop', text='stop', size=(200, 100), size_hint=(0.1, 1), on_press=self.button_press)
 
         button_panel.add_widget(Widget())
         button_panel.add_widget(rewind_button)
@@ -96,9 +102,9 @@ repeatend
         self.scale_type_label = Label(halign='right',text='scale type:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.6)
         self.scale_type_input = TextInput(multiline=False, font_size=font_size, size_hint_x=1.5)
         self.scale_key_label = Label(halign='right', text='scale key:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.6)
-        self.scale_key_input = TextInput(multiline=False, font_size=font_size, size_hint_x=0.5)
+        self.scale_key_input = TextInput(multiline=False, font_size=font_size, size_hint_x=0.4)
         self.scale_degree_label = Label(halign='right', text='scale degree:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.7)
-        self.scale_degree_input = TextInput(multiline=False, font_size=font_size, size_hint_x=0.5)
+        self.scale_degree_input = TextInput(multiline=False, font_size=font_size, size_hint_x=0.4)
         self.show_scales_label = Label(halign='right', text='scales:', font_size='16sp', color=(0, 0, 0, 1), size_hint_x=0.5)
         self.show_scales_checkbox = CheckBox(active=True, size_hint_x=checkbox_size_hint)
         self.show_scales_checkbox.bind(active=self.show_scales)
@@ -114,7 +120,7 @@ repeatend
         self.show_common_chord_tones_checkbox = CheckBox(active=True, size_hint_x=checkbox_size_hint)
         self.show_common_chord_tones_checkbox.bind(active=self.show_common_chord_tones)
 
-        self.apply_button = Button(id='apply', text='apply', on_press=self.button_press)
+        self.apply_button = Button(id='apply', text='apply', on_press=self.button_press, size_hint_x=0.4)
 
         # self.curr_line_text = Label(color=(1, 0, 0, 0.9), halign='left', id='curr_line', text='a-hole abundance', size_hint=(1, 0.1), font_size='26sp', outline_color=(0, 1, 0))
         harmonic_panel = GridLayout(cols=17, size_hint_y=0.05, height=90, size_hint_x=1, spacing=[10,10])
@@ -140,18 +146,43 @@ repeatend
         harmonic_panel.add_widget(self.show_common_chord_tones_label)
         harmonic_panel.add_widget(self.show_common_chord_tones_checkbox)
 
-        with harmonic_panel.canvas:
-            Color(0, 1, 0, 0.25)
-            Rectangle(pos=harmonic_panel.pos, size=harmonic_panel.size)
+        save_button = Button(id='save', text='save', on_press=self.button_press, size_hint_x=0.1)
+        self.saved_dropdown = DropDown(size_hint_x=0.7)
+        save_panel = BoxLayout(orientation='horizontal', size_hint_y=.05, size_hint_x=1, minimum_height=100)
+
+        saved_button = Button(text='-- Select Saved --', size_hint_x=1)
+
+        # show the dropdown menu when the main button is released
+        # note: all the bind() calls pass the instance of the caller (here, the
+        # mainbutton instance) as the first argument of the callback (here,
+        # dropdown.open.).
+        saved_button.bind(on_release=self.saved_dropdown.open)
+
+        # one last thing, listen for the selection in the dropdown list and
+        # assign the data to the button text.
+        self.saved_dropdown.bind(on_select=self.load_saved)
+
+        self.saved_button = saved_button
+        save_panel.add_widget(Widget())
+        save_panel.add_widget(save_button)
+        save_panel.add_widget(saved_button)
+        save_panel.center_x = self.center_x
+        save_panel.add_widget(Widget())
+
+        # with harmonic_panel.canvas:
+        #     Color(0, 1, 0, 0.25)
+        #     Rectangle(pos=harmonic_panel.pos, size=harmonic_panel.size)
 
         self.add_widget(button_panel)
         self.add_widget(harmonic_panel)
+        self.add_widget(save_panel)
         self.add_widget(self.mma_textarea)
 
         tmp_dir = ConfigParser.get_configparser('app').get('fretboard_adv','mma_tmp_dir')
         self.init_tmp_dir(tmp_dir)
         self.tmp_mma_outfile = os.path.join(tmp_dir, 'tmp.mma')
         self.tmp_mid_outfile = os.path.join(tmp_dir, 'tmp.mid')
+        self.tmp_dir = tmp_dir
 
         self.mma_path = ConfigParser.get_configparser('app').get('fretboard_adv','mma_script_loc')
         self.needs_reload = False
@@ -182,6 +213,8 @@ repeatend
 
         self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
         self._keyboard.bind(on_key_down=self._on_keyboard_down)
+        self.load_saved_files()
+        self.reload_saved_dropdown()
 
     def _keyboard_closed(self):
         self._keyboard.unbind(on_key_down=self._on_keyboard_down)
@@ -262,9 +295,85 @@ repeatend
             self.stop_playing_midi()
         elif button.id == 'apply':
             self.apply_harmonic_setting()
+        elif button.id == 'save':
+            self.do_save_as()
         # self.curr_line_text.text = txt
         # self.curr_line_text.texture_update()
         # print(txt)
+
+
+    def do_save_as(self):
+        def on_save(file):
+            print("da file wuz {}".format(file))
+            if self.needs_reload:
+                self.reload_mma()
+            print("fugging outfile is {}".format(self.tmp_mma_outfile))
+            copyfile(self.tmp_mma_outfile, os.path.join(self.tmp_dir, file + '.mma'))
+            copyfile(self.tmp_mid_outfile, os.path.join(self.tmp_dir, file + '.mid'))
+            self.reload_saved_dropdown()
+            self.load_saved(self.saved_dropdown, os.path.join(self.tmp_dir, file + '.mma'))
+
+        open_saveas_dialog(current_name=os.path.splitext(basename(self.current_filename))[0] if self.current_filename else '', on_save=on_save)
+
+
+    def load_saved_files(self):
+        self.files_list = []
+        for file in os.listdir(self.tmp_dir):
+            if file.endswith(".mma") and file != 'tmp.mma':
+                f = os.path.join(self.tmp_dir, file).replace("\\","/")
+                self.files_list.append(f)
+
+    def reload_saved_dropdown(self):
+        self.saved_dropdown.clear_widgets()
+        for file in self.files_list:
+            # When adding widgets, we need to specify the height manually
+            # (disabling the size_hint_y) so the dropdown can calculate
+            # the area it needs.
+
+            btn = Button(text=file, size_hint_y=None, height=44)
+
+            # for each button, attach a callback that will call the select() method
+            # on the dropdown. We'll pass the text of the button as the data of the
+            # selection.
+            btn.bind(on_release=lambda btn: self.saved_dropdown.select(btn.text))
+
+            # then add the button inside the dropdown
+            self.saved_dropdown.add_widget(btn)
+
+    def load_saved(self, widget, selected, *args):
+        print("selected was {} of type {} wit args {}".format(selected, type(selected), args))
+        setattr(self.saved_button, 'text', selected)
+        if self.load_file_contents(selected):
+            self.current_filename = selected
+        else:
+            Alert(title="Oops", text="Couldn't load file:{}".format(selected))
+
+
+    def load_file_contents(self, file):
+        try:
+            with open(file, 'r') as f:
+                file_contents = f.read()
+        except FileNotFoundError:
+            print("file {} doesn't exist".format(file))
+            return None
+
+        copyfile(file, self.tmp_mma_outfile)
+
+        self.mma_textarea.text = file_contents
+        self.build_lines_map(file_contents)
+        mid_name, _ = os.path.splitext(file)
+        mid_name += ".mid"
+        print("midi file name is {}".format(mid_name))
+        try:
+            self.midi_config.set_midi_file(mid_name, self.current_tempo)
+            self.needs_reload = False
+            copyfile(mid_name, self.tmp_mid_outfile)
+        except FileNotFoundError:
+            print("midi file {} doesn't exist".format(mid_name))
+            self.needs_reload = True
+
+        return file
+
 
     def play_pressed(self):
         if self.needs_reload:
