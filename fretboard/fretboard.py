@@ -511,13 +511,16 @@ class Fretboard(RelativeLayout):
                 if curr_patt_notes:
                     old = set(curr_patt_notes)
                     new = set(new_notes)
+
                     to_hide = old - new
-                    to_add = new - old
+                    # to_add = new - old
+                    to_add = new
                     if not to_hide and not to_add:
                         # nothing to do
                         # print("same damn thing all over again!!!")
                         return
 
+                    # print("adding {} and hiding {}".format(to_add, to_hide))
                     self.hide_pattern(to_hide)
                     new_notes = to_add
 
@@ -586,6 +589,15 @@ class Fretboard(RelativeLayout):
     def hide_pattern(self, notes):
         for n in notes:
             self.highlight_tone_marker(*n, hide=True)
+
+    def highlight_tone_marker(self, string_num, fret_num, hide=False):
+        note_id = _generate_scale_note_id(string_num, fret_num)
+
+        note = self.scale_notes.get(note_id)
+        if note:
+            note.set_highlighted(not hide)
+
+        return note_id
 
 
     def show_chord_tones(self, chord, scale_name=None, scale_key=None, scale_degree=None):
@@ -728,20 +740,12 @@ class Fretboard(RelativeLayout):
             pos_hint = {'center_x': loc[0]/self.width, 'center_y': loc[1]/self.height}
             size_hint = (self.finger_width_ratio, (self.finger_width_ratio * self.width / self.height))
             # print('pos_hint is {}'.format(pos_hint))
-            # print("making new scale note {},{}".format(string_num, fret_num))
+            # print("making new scale note {}".format(note_id))
             note = ScaleNote(self, string_num, fret_num, chord_label, chord_degree, scale_degree, True if is_playing else False, pos_hint=pos_hint, size_hint=size_hint)
             self.scale_notes[note_id] = note
             self.add_widget(note)
         return note_id
 
-    def highlight_tone_marker(self, string_num, fret_num, hide=False):
-        note_id = _generate_scale_note_id(string_num, fret_num)
-
-        note = self.scale_notes.get(note_id)
-        if note:
-            note.set_highlighted(not hide)
-
-        return note_id
 
 
 class Note(Widget):
