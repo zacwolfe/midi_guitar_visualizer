@@ -42,8 +42,11 @@ class Tuning(object):
         return (channel, midi_note - note)
 
     def is_impossible_note(self, channel, midi_note):
-        note = self.get_string_midi_note(channel, 0)
-        return midi_note < note or midi_note - note > self.num_frets
+        try:
+            note = self.get_string_midi_note(channel, 0)
+            return midi_note < note or midi_note - note > self.num_frets
+        except IndexError:
+            return True
 
     def is_open_string(self, channel, midi_note):
         return self.get_string_midi_note(channel, 0) == midi_note
