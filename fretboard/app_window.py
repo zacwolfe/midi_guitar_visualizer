@@ -18,6 +18,7 @@ class AppWindow(BoxLayout):
     initial_width = ConfigParserProperty(0, 'window', 'initial_width', 'app', val_type=int)
     initial_screen_loc_x = ConfigParserProperty(0, 'window', 'initial_screen_loc_x', 'app', val_type=int)
     initial_screen_loc_y = ConfigParserProperty(0, 'window', 'initial_screen_loc_y', 'app', val_type=int)
+    maximized = ConfigParserProperty(0, 'window', 'maximized', 'app', val_type=bool)
     midi_port = ConfigParserProperty(0, 'midi', 'midi_port', 'app')
     midi_output_port = ConfigParserProperty(0, 'midi', 'midi_output_port', 'app')
 
@@ -40,6 +41,9 @@ class AppWindow(BoxLayout):
             Window.left = self.initial_screen_loc_x
             Window.top = self.initial_screen_loc_y
             Window.clearcolor = (1, 1, 1, 1)
+            if self.maximized:
+                Window.maximize()
+
             self.rect = Rectangle(pos=self.pos, size=self.size, group='fb')
 
         pattern_mapper = P4TuningPatternMatcher(self.tuning, self.chords_config, self.scale_config, self.patterns_config)
@@ -57,6 +61,8 @@ class AppWindow(BoxLayout):
             pass
 
         self.bind(size=self.size_changed)
+        Window.bind(on_maximize=lambda x: App.get_running_app().config.set('window', 'maximized', True))
+        Window.bind(on_restore=lambda x: App.get_running_app().config.set('window', 'maximized', False))
 
         # self.init_midi()
 

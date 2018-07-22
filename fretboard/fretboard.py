@@ -61,6 +61,7 @@ def get_window_defaults():
         'initial_screen_loc_x': 50,
         'initial_screen_loc_y': 400,
         'height_ratio': .36,
+        'maximized': False
     }
 
 def get_harmonic_definitions_defaults():

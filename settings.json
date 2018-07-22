@@ -93,6 +93,13 @@
     "key": "initial_screen_loc_y"
   },
   {
+    "type": "bool",
+    "title": "Maximized",
+    "desc": "Start in maximized mode",
+    "section": "window",
+    "key": "maximized"
+  },
+  {
     "type": "numeric",
     "title": "String bridge spacing",
     "desc": "The width of the bridge box as a percentage of the neck width",
