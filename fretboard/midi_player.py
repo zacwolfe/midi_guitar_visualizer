@@ -114,11 +114,11 @@ class MidiPlayer(object):
 def play_message(msg, output_queue, output_port):
     if msg.type == 'lyrics' or msg.type == 'marker':
         # if msg.type == 'lyrics':
-        print("got {}: {}".format('lyric' if msg.type == 'lyric' else 'marker', msg))
+        # print("got {}: {}".format('lyric' if msg.type == 'lyric' else 'marker', msg))
         if msg.text:
             result = parse_metadata(msg.text.strip(), msg.type == 'marker')
-            if not result['pre_chord']:
-                print("parsed {}: {}".format('lyric' if msg.type == 'lyric' else 'marker', result))
+            # if not result['pre_chord']:
+            #     print("parsed {}: {}".format('lyric' if msg.type == 'lyric' else 'marker', result))
             # else:
             #     pass
             if result:

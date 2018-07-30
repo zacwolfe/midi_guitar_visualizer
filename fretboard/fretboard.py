@@ -656,7 +656,7 @@ class Fretboard(RelativeLayout):
             print("skipping same chord {}".format(harmonic_setting[0]))
             return
 
-        print("current settings is {} and gnu {}".format(self.current_harmonic_settings, harmonic_setting))
+        # print("current settings is {} and gnu {}".format(self.current_harmonic_settings, harmonic_setting))
         chord_tone = m.group(1)
         if m.group(2):
             chord_tone += m.group(2)
