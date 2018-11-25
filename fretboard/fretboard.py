@@ -987,7 +987,7 @@ class ScaleNote(Widget):
             color_idx = 0
         elif self.chord_degree is not None and self.chord_degree > 0:
             color_idx = self.chord_degree
-        elif self.scale_degree and self.scale_degree >= 0:
+        elif self.scale_degree is not None and self.scale_degree >= 0:
             color_idx = 8
 
         return self.degree_colors[color_idx]
