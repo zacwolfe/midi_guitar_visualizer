@@ -133,6 +133,7 @@ class Fretboard(RelativeLayout):
     chord_tones_visible = BooleanProperty(True)
     common_chord_tones_visible = True
     tracking_patterns = True
+    target_tone_callback = None
 
     note_queue = collections.deque(maxlen=3)
     def __init__(self, tuning, pattern_mapper, **kwargs):
@@ -149,7 +150,6 @@ class Fretboard(RelativeLayout):
         self.finger_color = get_color('finger_color')
         self.tuning = tuning
         self.pattern_mapper = pattern_mapper
-        self.notes = {}
         self.scale_notes = {}
 
         with self.canvas:
@@ -193,6 +193,9 @@ class Fretboard(RelativeLayout):
             # Ellipse(pos=(touch.x - d / 2, touch.y - d / 2), size=(d, d))
             # print("touch! {},{}".format(touch.x, touch.y))
             # self.show_finger(touch.x, touch.y)
+
+    def set_target_tone_callback(self, callback):
+        self.target_tone_callback = callback
 
     def get_fretboard_outline(self):
         with self.canvas:
@@ -352,6 +355,11 @@ class Fretboard(RelativeLayout):
             self.update_pattern()
 
         note_id = self.add_tone_marker(string_num, fret_num, None, None, None, True)
+
+        if note_id and self.target_tone_callback:
+            note = self.scale_notes[note_id]
+            if note.is_visible and (note.is_scale_tone or note.is_chord_tone):
+                self.target_tone_callback.hit(string_num, fret_num, note.scale_degree, note.chord_degree)
         # note_id = None
 
         # note_id = _generate_note_id(string_num, fret_num)
@@ -601,6 +609,7 @@ class Fretboard(RelativeLayout):
         return note_id
 
 
+
     def show_chord_tones(self, chord, scale_name=None, scale_key=None, scale_degree=None):
         m = parse_chord(chord)
         if not m:
@@ -747,7 +756,9 @@ class Fretboard(RelativeLayout):
             self.add_widget(note)
         return note_id
 
-
+    def show_note(self, note_name):
+        self.show_chord_tones(note_name+'R')
+        return self.current_harmonic_mapping
 
 class Note(Widget):
     end_color = [0.1, 0.1, 1.0, 0.0]
@@ -910,6 +921,9 @@ class ScaleNote(Widget):
     common_tone = BooleanProperty(False)
     common_tone_trigger = None
     being_played = False # indicating input activity
+    chord_degree = None
+    scale_degree = None
+
 
     def __init__(self, fretboard, string_num, fret_num, chord_label=None, chord_degree=8, scale_degree=None, being_played=False, **kwargs):
         super(ScaleNote, self).__init__(**kwargs)

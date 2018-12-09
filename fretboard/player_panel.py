@@ -68,7 +68,7 @@ repeatend
         self.orientation = 'vertical'
         self.padding = 10
         self.spacing = 10
-        button_panel = BoxLayout(orientation='horizontal', size_hint=(1, 0.08))
+        button_panel = BoxLayout(orientation='horizontal', size_hint=(1, 0.05))
         button_panel.center_x = self.center_x
         self.play_button = Button(id='play',text='play', size=(200, 100), size_hint=(0.1, 1), on_press=self.button_press)
         self.play_label_text = 'play'
@@ -219,6 +219,10 @@ repeatend
     def _keyboard_closed(self):
         self._keyboard.unbind(on_key_down=self._on_keyboard_down)
         self._keyboard = None
+
+
+    def key_pressed(self, keyboard, keycode, text, modifiers):
+        self._on_keyboard_down(keyboard, keycode, text, modifiers)
 
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
         print("key down shit biggler {} and {} with modifiers {}".format(keycode, text, modifiers))

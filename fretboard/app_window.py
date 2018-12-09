@@ -7,6 +7,8 @@ from .tunings import P4Tuning
 from .midi import Midi, NoteFilter
 from .pattern_mapper import P4TuningPatternMatcher, StandardTuningPatternMatcher
 from .player_panel import PlayerPanel
+from .note_trainer_panel import NoteTrainerPanel
+from .menu_panel import MenuPanel
 from scales.scales import Scales, Chords, Patterns
 from kivy.config import ConfigParser, Config
 from kivy.uix.boxlayout import BoxLayout
@@ -49,8 +51,10 @@ class AppWindow(BoxLayout):
         pattern_mapper = P4TuningPatternMatcher(self.tuning, self.chords_config, self.scale_config, self.patterns_config)
         self.fretboard = Fretboard(tuning=self.tuning, pattern_mapper=pattern_mapper, pos_hint={'x':0, 'y':0}, size_hint=(1, 0.3))
 
-        self.player_panel = PlayerPanel(fretboard=self.fretboard, midi_config=self.midi_config, size_hint=(1, 0.7))
-        self.add_widget(self.player_panel)
+        self.player_panel = PlayerPanel(fretboard=self.fretboard, midi_config=self.midi_config, size_hint=(1, 1))
+        self.note_trainer_panel = NoteTrainerPanel(fretboard=self.fretboard, midi_config=self.midi_config, size_hint=(1, 1))
+        self.menu_panel = MenuPanel(fretboard=self.fretboard, player_panel=self.player_panel, note_trainer_panel=self.note_trainer_panel, size_hint=(1, 0.7))
+        self.add_widget(self.menu_panel)
         self.add_widget(self.fretboard)
 
 
