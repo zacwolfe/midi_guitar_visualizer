@@ -4,7 +4,7 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.properties import ConfigParserProperty
 from .fretboard import Fretboard
 from .tunings import P4Tuning
-from .midi import Midi, NoteFilter
+from .midi import Midi, DefaultNoteFilter
 from .pattern_mapper import P4TuningPatternMatcher, StandardTuningPatternMatcher
 from .player_panel import PlayerPanel
 from .note_trainer_panel import NoteTrainerPanel
@@ -20,7 +20,7 @@ class AppWindow(BoxLayout):
     initial_width = ConfigParserProperty(0, 'window', 'initial_width', 'app', val_type=int)
     initial_screen_loc_x = ConfigParserProperty(0, 'window', 'initial_screen_loc_x', 'app', val_type=int)
     initial_screen_loc_y = ConfigParserProperty(0, 'window', 'initial_screen_loc_y', 'app', val_type=int)
-    maximized = ConfigParserProperty(0, 'window', 'maximized', 'app', val_type=bool)
+    maximized = ConfigParserProperty(0, 'window', 'maximized', 'app', val_type=int)
     midi_port = ConfigParserProperty(0, 'midi', 'midi_port', 'app')
     midi_output_port = ConfigParserProperty(0, 'midi', 'midi_output_port', 'app')
 
@@ -30,7 +30,7 @@ class AppWindow(BoxLayout):
         self.midi_player = midi_player
         self.orientation='vertical'
         self.tuning = P4Tuning(int(ConfigParser.get_configparser('app').get('fretboard','num_frets')))
-        self.note_filter = NoteFilter(self.tuning)
+        self.note_filter = DefaultNoteFilter(self.tuning)
         if self.midi_port:
             self.midi_config = Midi(self.midi_player, self.note_filter, self.midi_port, self.midi_message_received, self.midi_output_port)
 
@@ -65,8 +65,8 @@ class AppWindow(BoxLayout):
             pass
 
         self.bind(size=self.size_changed)
-        Window.bind(on_maximize=lambda x: App.get_running_app().config.set('window', 'maximized', True))
-        Window.bind(on_restore=lambda x: App.get_running_app().config.set('window', 'maximized', False))
+        Window.bind(on_maximize=lambda x: App.get_running_app().config.set('window', 'maximized', 1))
+        Window.bind(on_restore=lambda x: App.get_running_app().config.set('window', 'maximized', 0))
 
         # self.init_midi()
 

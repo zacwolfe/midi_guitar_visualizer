@@ -61,7 +61,7 @@ def get_window_defaults():
         'initial_screen_loc_x': 50,
         'initial_screen_loc_y': 400,
         'height_ratio': .36,
-        'maximized': False
+        'maximized': 0
     }
 
 def get_harmonic_definitions_defaults():
@@ -358,7 +358,7 @@ class Fretboard(RelativeLayout):
 
         if note_id and self.target_tone_callback:
             note = self.scale_notes[note_id]
-            if note.is_visible and (note.is_scale_tone or note.is_chord_tone):
+            if note.is_scale_tone or note.is_chord_tone:
                 self.target_tone_callback.hit(string_num, fret_num, note.scale_degree, note.chord_degree)
         # note_id = None
 
@@ -639,12 +639,14 @@ class Fretboard(RelativeLayout):
 
         visible_notes = set()
 
+
         for string_num, frets in mappings.items():
             if string_num >= self.tuning.num_strings or string_num < 0:
                 continue
             for mapping in frets:
                 if mapping:
-                    visible_notes.add(self.add_tone_marker(string_num, mapping[0], mapping[1], mapping[2], mapping[3]))
+                    if mapping[2] is None or self.chord_tones_visible:
+                        visible_notes.add(self.add_tone_marker(string_num, mapping[0], mapping[1], mapping[2], mapping[3]))
 
         # hide non-visible notes
         for note_id, note in self.scale_notes.items():

@@ -31,6 +31,20 @@
   },
   {
     "type": "numeric",
+    "title": "Ignore open strings",
+    "desc": "Midi guitar controllers often report open string hits incorrectly",
+    "section": "midi",
+    "key": "ignore_open_strings"
+  },
+  {
+    "type": "numeric",
+    "title": "Minimum note velocity",
+    "desc": "Ignore notes below this velocity threshold",
+    "section": "midi",
+    "key": "min_note_velocity"
+  },
+  {
+    "type": "numeric",
     "title": "Neck taper",
     "desc": "The amount of neck taper for the fretboard as a percentage of the neck width",
     "section": "fretboard",
@@ -93,7 +107,7 @@
     "key": "initial_screen_loc_y"
   },
   {
-    "type": "bool",
+    "type": "numeric",
     "title": "Maximized",
     "desc": "Start in maximized mode",
     "section": "window",

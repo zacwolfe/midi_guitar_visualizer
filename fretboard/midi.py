@@ -6,6 +6,7 @@ from time import time, sleep
 from kivy.clock import Clock
 from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty
+from kivy.properties import ConfigParserProperty
 import re
 import queue
 from .midi_player import PLAYER_STATE_PLAYING, PLAYER_STATE_STOPPED, PLAYER_STATE_PAUSED
@@ -30,6 +31,8 @@ def get_midi_defaults():
         'midi_output_port': '',
         'preload_chord_amt': 0.7,
         'common_chord_tone_amt': 1.5,
+        'ignore_open_strings': 0,
+        'min_note_velocity': 20
     }
 
 METADATA_REGEX = r'([A-G]{1}[a-zA-Z0-9\#\/]*|\/)(?:\s)?(([A-G][b\#]{0,1})_([a-zA-Z0-9]+)(\((\d)\))?)?(\|([0-9]+)\|)?'
@@ -245,26 +248,29 @@ class Midi(EventDispatcher):
             self.meta_poll_trigger()
 
 
-class NoteFilter(object):
+class DefaultNoteFilter(EventDispatcher):
+    skip_open_strings = ConfigParserProperty(0, 'midi', 'ignore_open_strings', 'app', val_type=int)
+    min_velocity = ConfigParserProperty(20, 'midi', 'min_note_velocity', 'app', val_type=int)
     note_queue = collections.deque(maxlen=3)
-    min_velocity = 20
+    # min_velocity = 20
     open_string_min_velocity = 50
     max_fret_distance = 6
     max_seq_gap_millis = 250
-    skip_open_strings = True
+    # skip_open_strings = True
 
-    def __init__(self, tuning):
+    def __init__(self, tuning, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.tuning = tuning
 
     def filter_note(self, message):
-        # print("got message {}".format(message))
+        # print("got message {} and skipping os {}".format(message, self.skip_open_strings))
 
         now = current_time_millis()
         message.time = now
         if message.type == 'note_on':
             if (self.tuning.is_impossible_note(message.channel, message.note)):
                 return
-            if (self.tuning.is_open_string(message.channel, message.note) and (self.skip_open_strings or message.velocity < self.open_string_min_velocity)):
+            if (self.tuning.is_open_string(message.channel, message.note) and (self.skip_open_strings > 0 or message.velocity < self.open_string_min_velocity)):
                 return
             elif message.velocity < self.min_velocity:
                 return

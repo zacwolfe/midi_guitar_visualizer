@@ -21,10 +21,11 @@ from kivy.core.window import Window
 from kivy.uix.dropdown import DropDown
 from shutil import copyfile
 from os.path import basename
+from kivy.clock import Clock
 from kivy.metrics import pt
 from functools import partial
 import random
-
+import winsound
 
 class NoteTrainerPanel(BoxLayout):
     play_label_text = StringProperty('')
@@ -129,7 +130,8 @@ class NoteTrainerPanel(BoxLayout):
         options_panel.add_widget(self.accidental_checkbox_flat)
 
         self.show_notes_label = Label(halign='right', text="show notes:", font_size='16sp', color=(0, 0, 0, 1))
-        self.show_notes_checkbox = CheckBox()
+        self.show_notes_checkbox = CheckBox(active=True)
+        self.show_notes_checkbox.bind(active=self.show_notes)
         options_panel.add_widget(self.show_notes_label)
         options_panel.add_widget(self.show_notes_checkbox)
 
@@ -137,6 +139,11 @@ class NoteTrainerPanel(BoxLayout):
         self.require_all_checkbox = CheckBox()
         options_panel.add_widget(self.require_all_label)
         options_panel.add_widget(self.require_all_checkbox)
+
+        self.error_sound_label = Label(halign='right', text="beep on error:", font_size='16sp', color=(0, 0, 0, 1))
+        self.error_sound_checkbox = CheckBox()
+        options_panel.add_widget(self.error_sound_label)
+        options_panel.add_widget(self.error_sound_checkbox)
 
         options_container.add_widget(Widget())
         options_container.add_widget(options_panel)
@@ -158,8 +165,11 @@ class NoteTrainerPanel(BoxLayout):
         return True
 
 
+    def show_notes(self, checkbox, value):
+        self.fretboard.show_arpeggio_tones(value)
+
     def note_checked(self, note, checkbox, value):
-        print("note {}, checkbox {}, value {}".format(note, checkbox, value))
+        # print("note {}, checkbox {}, value {}".format(note, checkbox, value))
         if value:
             self.selected_notes.add(note)
         else:
@@ -175,7 +185,7 @@ class NoteTrainerPanel(BoxLayout):
     def update_current_note(self, *args):
         self.current_note_label.text = self.current_note
         self.current_mapping = self.fretboard.show_note(self.current_note)
-        print("got a mapp {}".format(self.current_mapping))
+        # print("got a mapp {}".format(self.current_mapping))
 
     def button_press(self, button):
         if button.id == 'play':
@@ -226,10 +236,28 @@ class NoteTrainerPanel(BoxLayout):
                 self.current_note = note
                 return
 
+    def is_hit(self, string_num, fret_num):
+        if not self.current_mapping:
+            return False
+
+        mapping = self.current_mapping[string_num]
+        if not mapping:
+            return False
+
+        for fret in mapping:
+            if fret[0] == fret_num:
+                return True
+
+        return False
+
     def hit(self, string_num, fret_num, scale_degree, chord_degree):
         if not self.trainer_started:
             return
 
-        if chord_degree is not None:
-            self.get_next_note()
+        if chord_degree is not None or self.is_hit(string_num, fret_num):
+            # give a little delay before showing the next
+            Clock.schedule_once(lambda dt: self.get_next_note(), .2)
+            # self.get_next_note()
+        elif self.error_sound_checkbox.active:
+            winsound.Beep(261*2, 500)
 
