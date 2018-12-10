@@ -1,27 +1,27 @@
-from kivy.clock import mainthread
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.button import Button
-from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
-from kivy.uix.checkbox import CheckBox
-from kivy.uix.widget import Widget
-from kivy.uix.scrollview import ScrollView
-from kivy.graphics import Color, Rectangle
-from kivy.config import ConfigParser
-from util.alert_dialog import Alert
-from util.input_dialog import open_saveas_dialog
-import subprocess
 import os
 import re
-from kivy.properties import StringProperty, NumericProperty
-from . midi import PLAYER_STATE_STOPPED, PLAYER_STATE_PLAYING, PLAYER_STATE_PAUSED
-from kivy.properties import ConfigParserProperty
-from kivy.core.window import Window
-from kivy.uix.dropdown import DropDown
-from shutil import copyfile
+import subprocess
 from os.path import basename
+from shutil import copyfile
+
+from kivy.app import App
+from kivy.clock import mainthread
+from kivy.config import ConfigParser
+from kivy.core.window import Window
+from kivy.properties import ConfigParserProperty
+from kivy.properties import StringProperty, NumericProperty
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.checkbox import CheckBox
+from kivy.uix.dropdown import DropDown
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
+from kivy.uix.widget import Widget
+
+from util.alert_dialog import Alert
+from util.input_dialog import open_saveas_dialog
+from .midi import PLAYER_STATE_STOPPED, PLAYER_STATE_PLAYING, PLAYER_STATE_PAUSED
 
 TEMPO_REGEX = r'^tempo[\s]+([0-9]+)$'
 TEMPO_PATTERN = re.compile(TEMPO_REGEX, re.IGNORECASE)
@@ -234,7 +234,8 @@ repeatend
                     self.play_pressed()
                 else:
                     self.stop_playing_midi()
-
+        elif keycode[1] == 'f1':
+            App.get_running_app().open_settings()
         # if keycode[1] == 'w':
         #     self.player1.center_y += 10
         # elif keycode[1] == 's':

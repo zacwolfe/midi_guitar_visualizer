@@ -1,29 +1,10 @@
-from kivy.clock import mainthread
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.button import Button
-from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
-from kivy.uix.checkbox import CheckBox
-from kivy.uix.widget import Widget
-from kivy.uix.scrollview import ScrollView
-from kivy.graphics import Color, Rectangle
-from kivy.config import ConfigParser
-from util.alert_dialog import Alert
-from util.input_dialog import open_saveas_dialog
-import subprocess
-import os
-import re
-from kivy.properties import StringProperty, NumericProperty
-from . midi import PLAYER_STATE_STOPPED, PLAYER_STATE_PLAYING, PLAYER_STATE_PAUSED
-from kivy.properties import ConfigParserProperty
+from kivy.app import App
 from kivy.core.window import Window
-from kivy.uix.dropdown import DropDown
 from kivy.metrics import pt
-from shutil import copyfile
-from os.path import basename
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
 from kivy.uix.screenmanager import ScreenManager, Screen
+
 
 class MenuPanel(BoxLayout):
     sm = ScreenManager()
@@ -68,8 +49,9 @@ class MenuPanel(BoxLayout):
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
         print("key down shit biggler {} and {} with modifiers {}".format(keycode, text, modifiers))
         if keycode[1] == 'spacebar':
-            self.player_panel.key_pressed(keycode[1])
-
+            self.player_panel.key_pressed(keyboard, keycode, text, modifiers)
+        elif keycode[1] == 'f1':
+            App.get_running_app().open_settings()
         return True
 
     def button_press(self, button):

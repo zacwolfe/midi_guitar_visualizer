@@ -1,44 +1,34 @@
-from kivy.clock import mainthread
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.button import Button
-from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
-from kivy.uix.checkbox import CheckBox
-from kivy.uix.widget import Widget
-from kivy.uix.scrollview import ScrollView
-from kivy.graphics import Color, Rectangle
-from kivy.config import ConfigParser
-from util.alert_dialog import Alert
-from util.input_dialog import open_saveas_dialog
-import subprocess
-import os
-import re
-from kivy.properties import StringProperty, NumericProperty
-from kivy.properties import ConfigParserProperty
-from kivy.core.window import Window
-from kivy.uix.dropdown import DropDown
-from shutil import copyfile
-from os.path import basename
-from kivy.clock import Clock
-from kivy.metrics import pt
-from functools import partial
 import random
 import winsound
+from functools import partial
+import copy
+from kivy.clock import mainthread
+from kivy.app import App
+from kivy.clock import Clock
+from kivy.metrics import pt
+from kivy.properties import StringProperty
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.checkbox import CheckBox
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
+from kivy.uix.widget import Widget
+
 
 class NoteTrainerPanel(BoxLayout):
     play_label_text = StringProperty('')
-    current_note = StringProperty('')
+    current_note = StringProperty('', force_dispatch=True)
     play_button = None
     trainer_started = False
     selected_notes = set()
     current_mapping = None
 
-    def __init__(self, fretboard, midi_config, **kwargs):
+    def __init__(self, fretboard, midi_config, tuning, **kwargs):
         super(NoteTrainerPanel, self).__init__(**kwargs)
         self.fretboard = fretboard
         self.midi_config = midi_config
+        self.tuning = tuning
         self.orientation = 'vertical'
         self.padding = 10
         self.spacing = 10
@@ -162,6 +152,8 @@ class NoteTrainerPanel(BoxLayout):
         print("key down shit biggler {} and {} with modifiers {}".format(keycode, text, modifiers))
         if keycode[1] == 'spacebar':
             self.play_pressed()
+        elif keycode[1] == 'f1':
+            App.get_running_app().open_settings()
         return True
 
 
@@ -184,9 +176,16 @@ class NoteTrainerPanel(BoxLayout):
 
     def update_current_note(self, *args):
         self.current_note_label.text = self.current_note
-        self.current_mapping = self.fretboard.show_note(self.current_note)
+        self.current_mapping = self.cull_reference_strings(copy.deepcopy(self.fretboard.show_note(self.current_note)))
+
         # print("got a mapp {}".format(self.current_mapping))
 
+    def cull_reference_strings(self, mapping):
+        for string_num in list(mapping.keys()):
+            if string_num > self.tuning.num_strings -1 or string_num < 0:
+                del mapping[string_num]
+
+        return mapping
     def button_press(self, button):
         if button.id == 'play':
             self.play_pressed()
@@ -228,7 +227,8 @@ class NoteTrainerPanel(BoxLayout):
             return
 
         if len(notes) == 1:
-            return notes[0]
+            self.current_note = notes[0]
+            return
 
         while True:
             note =random.choice(notes)
@@ -240,21 +240,31 @@ class NoteTrainerPanel(BoxLayout):
         if not self.current_mapping:
             return False
 
-        mapping = self.current_mapping[string_num]
+        mapping = self.current_mapping.get(string_num)
         if not mapping:
             return False
 
-        for fret in mapping:
+        for idx, fret in enumerate(mapping):
             if fret[0] == fret_num:
+                if self.require_all_checkbox.active:
+                    mapping.pop(idx)
+                    if not mapping:
+                        del self.current_mapping[string_num]
+                    self.fretboard.hide_note(string_num, fret_num)
                 return True
 
         return False
 
+    # @mainthread
     def hit(self, string_num, fret_num, scale_degree, chord_degree):
         if not self.trainer_started:
             return
 
-        if chord_degree is not None or self.is_hit(string_num, fret_num):
+        # print("hit string {}:{}".format(string_num, fret_num))
+        if self.is_hit(string_num, fret_num):
+            if self.require_all_checkbox.active and self.current_mapping:
+                print("still got {}".format(self.current_mapping))
+                return
             # give a little delay before showing the next
             Clock.schedule_once(lambda dt: self.get_next_note(), .2)
             # self.get_next_note()

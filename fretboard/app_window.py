@@ -52,7 +52,7 @@ class AppWindow(BoxLayout):
         self.fretboard = Fretboard(tuning=self.tuning, pattern_mapper=pattern_mapper, pos_hint={'x':0, 'y':0}, size_hint=(1, 0.3))
 
         self.player_panel = PlayerPanel(fretboard=self.fretboard, midi_config=self.midi_config, size_hint=(1, 1))
-        self.note_trainer_panel = NoteTrainerPanel(fretboard=self.fretboard, midi_config=self.midi_config, size_hint=(1, 1))
+        self.note_trainer_panel = NoteTrainerPanel(fretboard=self.fretboard, midi_config=self.midi_config, tuning=self.tuning, size_hint=(1, 1))
         self.menu_panel = MenuPanel(fretboard=self.fretboard, player_panel=self.player_panel, note_trainer_panel=self.note_trainer_panel, size_hint=(1, 0.7))
         self.add_widget(self.menu_panel)
         self.add_widget(self.fretboard)

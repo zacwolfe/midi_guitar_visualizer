@@ -608,13 +608,17 @@ class Fretboard(RelativeLayout):
 
         return note_id
 
+    def hide_note(self, string_num, fret_num):
+        note_id = _generate_scale_note_id(string_num, fret_num)
 
+        note = self.scale_notes.get(note_id)
+        if note:
+            note.hide()
 
     def show_chord_tones(self, chord, scale_name=None, scale_key=None, scale_degree=None):
         m = parse_chord(chord)
         if not m:
             return
-
 
         harmonic_setting = (chord, scale_name, scale_key, scale_degree)
         if self.current_harmonic_settings == harmonic_setting:
