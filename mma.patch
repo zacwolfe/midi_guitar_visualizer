@@ -1,13 +1,3 @@
-From 87a441bf0a279401f66e0d9b0c43627273984b84 Mon Sep 17 00:00:00 2001
-From: Zac Wolfe <zacw@safisystems.com>
-Date: Sat, 7 Jul 2018 13:18:02 -0700
-Subject: [PATCH] add support for chords=BOTH
-
----
- .gitignore   |  2 ++
- MMA/lyric.py | 76 +++++++++++++++++++++++++++++++++++++++++++++++++-----------
- 2 files changed, 64 insertions(+), 14 deletions(-)
-
 diff --git a/.gitignore b/.gitignore
 index 38192dd..8c9ed6a 100644
 --- a/.gitignore
@@ -19,7 +9,7 @@ index 38192dd..8c9ed6a 100644
 +.idea
 +
 diff --git a/MMA/lyric.py b/MMA/lyric.py
-index 24f0bf6..c36bbc5 100644
+index 24f0bf6..5c55648 100644
 --- a/MMA/lyric.py
 +++ b/MMA/lyric.py
 @@ -158,7 +158,10 @@ class Lyric:
@@ -67,7 +57,7 @@ index 24f0bf6..c36bbc5 100644
              lyrics.insert(0, ' '.join(ly) + '\\r')
  
          v = self.versenum
-@@ -368,31 +381,36 @@ class Lyric:
+@@ -368,31 +381,44 @@ class Lyric:
          if not len(lyrics):
              return (ln, [])
  
@@ -82,10 +72,19 @@ index 24f0bf6..c36bbc5 100644
 -        if self.barsplit:
 -            lyrics = [lyrics]
 +        if saved_lyrics:
-+            saved_lyrics = saved_lyrics[0]
-+            saved_lyrics = self.normalize_lyrics(saved_lyrics)
-+            lyrics = self.normalize_lyrics(lyrics)
++            llist = []
++            for i,l in enumerate(saved_lyrics):
++                harmonic_instruction = self.normalize_lyrics(l)[0]
++                try:
++                    barnum = int(harmonic_instruction[harmonic_instruction.find("<")+1:harmonic_instruction.find(">")])
++                    for x in range(i+1, barnum):
++                        llist.append('')
++                except ValueError:
++                    pass
 +
++                llist.append(harmonic_instruction)
++            saved_lyrics = llist
++            lyrics = self.normalize_lyrics(lyrics)
 +            lyrics = self.combine_lyrics(saved_lyrics, lyrics, gbl.lineno)
 +            lyrics = self.parse_lyrics(lyrics)
          else:
@@ -94,10 +93,9 @@ index 24f0bf6..c36bbc5 100644
 +            if self.dupchords == 2:
 +                lyrics = self.add_line_number(lyrics, gbl.lineno)
 +            lyrics = self.parse_lyrics(lyrics)
- 
 +
 +        return (ln, lyrics)
-+
+ 
 +    def parse_lyrics(self, lyrics):
          beat = 0
          bstep = gbl.QperBar / float(len(lyrics))
@@ -116,7 +114,7 @@ index 24f0bf6..c36bbc5 100644
  
              a = a.replace('\\r', '\r')
              a = a.replace('\\n', '\n')
-@@ -412,8 +430,38 @@ class Lyric:
+@@ -412,8 +438,38 @@ class Lyric:
                          gbl.mtrks[0].addLyric(p, a)
  
              beat += bstep
@@ -156,6 +154,3 @@ index 24f0bf6..c36bbc5 100644
  
  
  # Create a single instance of the Lyric Class.
--- 
-2.15.2 (Apple Git-101.1)
-

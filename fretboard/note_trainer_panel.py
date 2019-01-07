@@ -21,7 +21,7 @@ class NoteTrainerPanel(BoxLayout):
     current_note = StringProperty('', force_dispatch=True)
     play_button = None
     trainer_started = False
-    selected_notes = set()
+    selected_notes = set("ABCDEFG")
     current_mapping = None
 
     def __init__(self, fretboard, midi_config, tuning, **kwargs):
@@ -55,43 +55,43 @@ class NoteTrainerPanel(BoxLayout):
         notes_panel = GridLayout(cols=14, row_force_default=True, row_default_height=40)
 
         self.note_label_a = Label(halign='right', text='A:', font_size='16sp', color=(0, 0, 0, 1))
-        self.note_checkbox_a = CheckBox()
+        self.note_checkbox_a = CheckBox(active=True)
         self.note_checkbox_a.bind(active=partial(self.note_checked, 'A'))
         notes_panel.add_widget(self.note_label_a)
         notes_panel.add_widget(self.note_checkbox_a)
 
         self.note_label_b = Label(halign='right', text='B:', font_size='16sp', color=(0, 0, 0, 1))
-        self.note_checkbox_b = CheckBox()
+        self.note_checkbox_b = CheckBox(active=True)
         self.note_checkbox_b.bind(active=partial(self.note_checked, 'B'))
         notes_panel.add_widget(self.note_label_b)
         notes_panel.add_widget(self.note_checkbox_b)
 
         self.note_label_c = Label(halign='right', text='C:', font_size='16sp', color=(0, 0, 0, 1))
-        self.note_checkbox_c = CheckBox()
+        self.note_checkbox_c = CheckBox(active=True)
         self.note_checkbox_c.bind(active=partial(self.note_checked, 'C'))
         notes_panel.add_widget(self.note_label_c)
         notes_panel.add_widget(self.note_checkbox_c)
 
         self.note_label_d = Label(halign='right', text='D:', font_size='16sp', color=(0, 0, 0, 1))
-        self.note_checkbox_d = CheckBox()
+        self.note_checkbox_d = CheckBox(active=True)
         self.note_checkbox_d.bind(active=partial(self.note_checked, 'D'))
         notes_panel.add_widget(self.note_label_d)
         notes_panel.add_widget(self.note_checkbox_d)
 
         self.note_label_e = Label(halign='right', text='E:', font_size='16sp', color=(0, 0, 0, 1))
-        self.note_checkbox_e = CheckBox()
+        self.note_checkbox_e = CheckBox(active=True)
         self.note_checkbox_e.bind(active=partial(self.note_checked, 'E'))
         notes_panel.add_widget(self.note_label_e)
         notes_panel.add_widget(self.note_checkbox_e)
 
         self.note_label_f = Label(halign='right', text='F:', font_size='16sp', color=(0, 0, 0, 1))
-        self.note_checkbox_f = CheckBox()
+        self.note_checkbox_f = CheckBox(active=True)
         self.note_checkbox_f.bind(active=partial(self.note_checked, 'F'))
         notes_panel.add_widget(self.note_label_f)
         notes_panel.add_widget(self.note_checkbox_f)
 
         self.note_label_g = Label(halign='right', text='G:', font_size='16sp', color=(0, 0, 0, 1))
-        self.note_checkbox_g = CheckBox()
+        self.note_checkbox_g = CheckBox(active=True)
         self.note_checkbox_g.bind(active=partial(self.note_checked, 'G'))
         notes_panel.add_widget(self.note_label_g)
         notes_panel.add_widget(self.note_checkbox_g)
@@ -105,7 +105,7 @@ class NoteTrainerPanel(BoxLayout):
         options_panel = GridLayout(cols=14, row_force_default=True, row_default_height=40)
 
         self.accidental_label_none = Label(halign='right', text="none:", font_size='16sp', color=(0, 0, 0, 1))
-        self.accidental_checkbox_none = CheckBox(group='accidentals', active=True)
+        self.accidental_checkbox_none = CheckBox(group='accidentals', active=False)
         options_panel.add_widget(self.accidental_label_none)
         options_panel.add_widget(self.accidental_checkbox_none)
 
@@ -115,7 +115,7 @@ class NoteTrainerPanel(BoxLayout):
         options_panel.add_widget(self.accidental_checkbox_sharp)
 
         self.accidental_label_flat = Label(halign='right', text="b's:", font_size='16sp', color=(0, 0, 0, 1))
-        self.accidental_checkbox_flat = CheckBox(group='accidentals')
+        self.accidental_checkbox_flat = CheckBox(group='accidentals', active=True)
         options_panel.add_widget(self.accidental_label_flat)
         options_panel.add_widget(self.accidental_checkbox_flat)
 
@@ -222,7 +222,6 @@ class NoteTrainerPanel(BoxLayout):
     def get_next_note(self):
         old_note = self.current_note
         notes = self.get_avail_notes()
-        print("got notes {}".format(notes))
         if not notes:
             return
 

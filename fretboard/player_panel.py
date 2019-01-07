@@ -18,14 +18,17 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
+from kivy.uix.scrollview import ScrollView
 
 from util.alert_dialog import Alert
 from util.input_dialog import open_saveas_dialog
 from .midi import PLAYER_STATE_STOPPED, PLAYER_STATE_PLAYING, PLAYER_STATE_PAUSED
 
+# import MMA.main
+
 TEMPO_REGEX = r'^tempo[\s]+([0-9]+)$'
 TEMPO_PATTERN = re.compile(TEMPO_REGEX, re.IGNORECASE)
-
+MAX_BAR_COUNT = 1000
 class PlayerPanel(BoxLayout):
     play_label_text = StringProperty('')
     curr_line_num = NumericProperty(-1)
@@ -94,6 +97,9 @@ repeatend
         self.mma_textarea.bind(text=self.text_changed)
         self.mma_textarea.disabled_foreground_color = [0,0,0,1]
         self.mma_textarea.background_disabled_normal = ''
+
+        # self.scrollview = ScrollView(size_hint=(1, 0.8))
+        # self.scrollview.add_widget(self.mma_textarea)
 
         checkbox_size_hint = 0.2
         font_size = '22sp'
@@ -177,6 +183,7 @@ repeatend
         self.add_widget(harmonic_panel)
         self.add_widget(save_panel)
         self.add_widget(self.mma_textarea)
+        # self.add_widget(self.scrollview)
 
         tmp_dir = ConfigParser.get_configparser('app').get('fretboard_adv','mma_tmp_dir')
         self.init_tmp_dir(tmp_dir)
@@ -215,6 +222,9 @@ repeatend
         self._keyboard.bind(on_key_down=self._on_keyboard_down)
         self.load_saved_files()
         self.reload_saved_dropdown()
+
+        def on_parent(self, widget, parent):
+            self.mma_textarea.focus = True
 
     def _keyboard_closed(self):
         self._keyboard.unbind(on_key_down=self._on_keyboard_down)
@@ -288,6 +298,7 @@ repeatend
             l = self.lines_map[self.curr_line_num - 1]
 
             self.mma_textarea.select_text(l[0], l[0] + len(l[1]))
+            self.mma_textarea.cursor = (0, self.curr_line_num - 1)
         except:
             print("Couldn't select text at {}".format(self.curr_line_num))
             self.mma_textarea.select_text(0,0)
@@ -397,7 +408,17 @@ repeatend
         with open(self.tmp_mma_outfile, "w") as file:
             file.write(txt)
         try:
-            subprocess.run("python {} -f {} {}".format(self.mma_path, self.tmp_mid_outfile, self.tmp_mma_outfile), shell=True, check=True)
+            subprocess.run("python {} -m {} -f {} {}".format(self.mma_path, MAX_BAR_COUNT, self.tmp_mid_outfile, self.tmp_mma_outfile), shell=True, check=True)
+            # import sys
+            # import runpy
+            #
+            # root = 'D:\gitrepo\midi_guitar_visualizer'
+            # path = os.getcwd()
+            # os.chdir(root + '\mma_main')
+            #
+            # sys.argv = ['', '-m', MAX_BAR_COUNT, '-f',root + '/' + self.tmp_mid_outfile, root + '/' + self.tmp_mma_outfile ]
+            # runpy.run_path(root + '\mma_main\mma.py', run_name='__main__')
+            # os.chdir(root)
             self.build_lines_map(txt)
             self.midi_config.set_midi_file(self.tmp_mid_outfile, self.current_tempo)
             self.needs_reload = False
@@ -436,7 +457,6 @@ repeatend
 
     @mainthread
     def midi_file_progress(self, chord, scale_type, scale_key, scale_degree=None, line_num=None, pre_chord=False):
-
         if scale_degree is None:
             scale_degree = 1
         else:

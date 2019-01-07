@@ -18,6 +18,7 @@ import cProfile
 import pstats
 
 
+
 class FretboardNavigator(App):
 
     def __init__(self, **kwargs):
@@ -84,8 +85,6 @@ class FretboardNavigator(App):
             self.root.reload_midi()
         elif section == 'scales':
             self.root.reload_scales()
-
-
 
 
 if __name__ == '__main__':
